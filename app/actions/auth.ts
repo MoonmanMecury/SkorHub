@@ -7,6 +7,8 @@ import { db } from '@/lib/db';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { sendPasswordResetEmail } from '@/lib/email';
+
 
 export async function login(formData: FormData) {
     const email = formData.get('email') as string;
@@ -140,12 +142,19 @@ export async function requestPasswordReset(formData: FormData) {
             VALUES ($1, $2, $3)
         `, [userId, token, expiresAt.toISOString()]);
 
-        // 4. Send Email (Mocked)
+        // 4. Send Email
         const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-        console.log(`[Mock Email] Password Reset Link for ${email}: ${resetLink}`);
 
-        return { success: true, message: 'If an account exists, a reset link has been sent. (Check server console for link)' };
+        const { error: emailError } = await sendPasswordResetEmail(email, resetLink);
+
+        if (emailError) {
+            console.error('Failed to send reset email:', emailError);
+            // We tell the user it's sent anyway to prevent enumeration, but log the error
+        }
+
+        return { success: true, message: 'If an account exists, a reset link has been sent.' };
     } catch (error) {
+
         console.error('Request Reset Error:', error);
         return { error: 'Something went wrong.' };
     }
