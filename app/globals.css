@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Custom Colors from HTML configs */
+  --color-primary: #EF4444;
+  --color-background-light: #F9FAFB;
+  --color-background-dark: #0A0A0B;
+  --color-surface-dark: #161618;
+  --color-card-dark: #1E1E21;
+  --color-accent: #3b82f6;
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-lexend);
+
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
+
+@layer utilities {
+  .glass-nav {
+    backdrop-filter: blur(12px);
+    background-color: rgba(10, 10, 10, 0.8);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .video-aspect {
+    aspect-ratio: 16 / 9;
+  }
+
+  .hide-scrollbar, .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar, .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Helper to force hardware acceleration or smooth transitions if needed */
+  .hardware-accel {
+    transform: translateZ(0);
+  }
+}
+
+:root {
+  --background: #F9FAFB;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0A0A0B;
+    /* background-dark */
+    --foreground: #ededed;
+  }
+}
+
+/* Force dark mode for now as per HTML 'class="dark"' usually implies always dark or user preference. 
+   If user wants toggle, we need efficient toggle. 
+   For now, let's respect system preference but default to dark-ish theme styles in globals if needed.
+   Actually, the HTML had <html class="dark"> hardcoded. So we should default to dark. */
+:root {
+  --background: #0A0A0B;
+  --foreground: #ffffff;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  @apply antialiased;
+}
+
+/* Global Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
