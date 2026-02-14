@@ -3,6 +3,8 @@ import { type EmailOtpType } from '@supabase/supabase-js'
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { db } from '@/lib/db'
+import { signToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
@@ -30,12 +32,29 @@ export async function GET(request: NextRequest) {
             }
         )
 
-        const { error } = await supabase.auth.verifyOtp({
+        const { data, error } = await supabase.auth.verifyOtp({
             type,
             token_hash,
         })
 
-        if (!error) {
+        if (!error && data.user) {
+            // SYNC: Create the custom token for backward compatibility (Dashboards rely on this)
+            const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [data.user.id]);
+            const isAdmin = userResult.rows[0]?.is_admin || false;
+
+            const token = signToken({
+                userId: data.user.id,
+                email: data.user.email,
+                isAdmin: isAdmin
+            });
+
+            cookieStore.set('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 7 * 24 * 60 * 60,
+                path: '/',
+            });
+
             const redirectUrl = process.env.NEXT_PUBLIC_APP_URL
                 ? `${process.env.NEXT_PUBLIC_APP_URL}${next}`
                 : new URL(next, request.url).toString();
@@ -59,9 +78,26 @@ export async function GET(request: NextRequest) {
             }
         )
 
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-        if (!error) {
+        if (!error && data.user) {
+            // SYNC: Create the custom token for backward compatibility (Dashboards rely on this)
+            const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [data.user.id]);
+            const isAdmin = userResult.rows[0]?.is_admin || false;
+
+            const token = signToken({
+                userId: data.user.id,
+                email: data.user.email,
+                isAdmin: isAdmin
+            });
+
+            cookieStore.set('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 7 * 24 * 60 * 60,
+                path: '/',
+            });
+
             const redirectUrl = process.env.NEXT_PUBLIC_APP_URL
                 ? `${process.env.NEXT_PUBLIC_APP_URL}${next}`
                 : new URL(next, request.url).toString();
