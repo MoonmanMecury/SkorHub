@@ -21,10 +21,43 @@ export async function getSession() {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
-    if (!token) return null;
+    if (token) {
+        const decoded = verifyToken(token);
+        if (decoded) return decoded;
+    }
 
-    const decoded = verifyToken(token);
-    return decoded; // returns { userId: string, email: string, ... }
+    // FALLBACK: If token is missing, check if they have a valid Supabase session
+    try {
+        const { createServerClient } = await import('@supabase/ssr');
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+            {
+                cookies: {
+                    getAll() { return cookieStore.getAll() },
+                    setAll() { /* Read-only in this context */ },
+                },
+            }
+        );
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            // Need to know if admin for the payload
+            const { db } = await import('./db');
+            const result = await db.query('SELECT is_admin FROM users WHERE id = $1', [user.id]);
+            const isAdmin = result.rows[0]?.is_admin || false;
+
+            return {
+                userId: user.id,
+                email: user.email,
+                isAdmin: isAdmin
+            };
+        }
+    } catch (e) {
+        console.error("Session fallback error:", e);
+    }
+
+    return null;
 }
 
 // Helper to check if user is authenticated (throws if not)
