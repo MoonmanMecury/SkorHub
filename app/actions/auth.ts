@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { createServerClient } from '@supabase/ssr';
 
 
 export async function login(formData: FormData) {
@@ -19,7 +20,6 @@ export async function login(formData: FormData) {
 
     try {
         const cookieStore = await cookies();
-        const { createServerClient } = await import('@supabase/ssr');
 
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -39,12 +39,14 @@ export async function login(formData: FormData) {
         );
 
         // 1. Sign in with Supabase Auth
+        console.log('Attempting Supabase sign-in for:', email);
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
             email,
             password,
         });
 
         if (signInError) {
+            console.error('Supabase Sign-in Error:', signInError.message);
             if (signInError.message.toLowerCase().includes('email not confirmed')) {
                 return { error: 'Please verify your email address before signing in.' };
             }
@@ -52,14 +54,18 @@ export async function login(formData: FormData) {
         }
 
         if (!data.user) {
+            console.error('Supabase returned no user data');
             return { error: 'Login failed.' };
         }
+
+        console.log('Supabase sign-in successful for user:', data.user.id);
 
         // 2. Ensure user exists in our local public.users table (Sync if missing)
         const userCheck = await db.query('SELECT is_admin FROM users WHERE id = $1', [data.user.id]);
         let isAdmin = false;
 
         if (userCheck.rows.length === 0) {
+            console.log('User missing in local DB, syncing...');
             // User authenticated in Supabase but missing in our DB - Sync them now
             await db.query(
                 'INSERT INTO users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
@@ -69,6 +75,8 @@ export async function login(formData: FormData) {
         } else {
             isAdmin = userCheck.rows[0].is_admin || false;
         }
+
+        console.log('Local DB sync complete. Admin status:', isAdmin);
 
         // 3. Create Token for backward compatibility (Optional)
         const token = signToken({
@@ -84,10 +92,11 @@ export async function login(formData: FormData) {
             path: '/',
         });
 
+        console.log('Session cookies set successfully.');
         return { success: true, isAdmin };
-    } catch (error) {
-        console.error('Login error:', error);
-        return { error: 'Server error' };
+    } catch (error: any) {
+        console.error('Login error details:', error);
+        return { error: `Server error: ${error.message || 'Unknown error'}` };
     }
 }
 
@@ -101,7 +110,6 @@ export async function register(formData: FormData) {
 
     try {
         const cookieStore = await cookies();
-        const { createServerClient } = await import('@supabase/ssr');
 
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -174,7 +182,6 @@ export async function register(formData: FormData) {
 
 export async function logout() {
     const cookieStore = await cookies();
-    const { createServerClient } = await import('@supabase/ssr');
 
     // 1. Clear Supabase Session (Strictly DB dependent)
     const supabase = createServerClient(
@@ -206,7 +213,6 @@ export async function requestPasswordReset(formData: FormData) {
 
     try {
         const cookieStore = await cookies();
-        const { createServerClient } = await import('@supabase/ssr');
 
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -254,7 +260,6 @@ export async function resetPassword(formData: FormData) {
 
     try {
         const cookieStore = await cookies();
-        const { createServerClient } = await import('@supabase/ssr');
 
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,

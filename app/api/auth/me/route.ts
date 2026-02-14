@@ -1,8 +1,9 @@
 
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession, signToken } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
 export async function GET() {
   try {
@@ -11,7 +12,6 @@ export async function GET() {
 
     // Re-sync: If custom token is missing but Supabase session exists, recreate the token
     if (!session) {
-      const { createServerClient } = await import('@supabase/ssr');
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
@@ -30,7 +30,6 @@ export async function GET() {
       const { data: { user: sbUser } } = await supabase.auth.getUser();
 
       if (sbUser) {
-        const { signToken } = await import('@/lib/auth');
         const userCheck = await db.query('SELECT is_admin FROM users WHERE id = $1', [sbUser.id]);
         let isAdmin = false;
 

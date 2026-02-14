@@ -1,6 +1,8 @@
 
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { db } from '@/lib/db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_during_dev';
 
@@ -28,7 +30,6 @@ export async function getSession() {
 
     // Fallback: Check Supabase session if legacy token is missing or invalid
     try {
-        const { createServerClient } = await import('@supabase/ssr');
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
@@ -36,8 +37,6 @@ export async function getSession() {
                 cookies: {
                     getAll() { return cookieStore.getAll() },
                     setAll(cookiesToSet) {
-                        // Note: We can't always set cookies in getSession if called during render
-                        // but we can at least try or let the caller handle it.
                         try {
                             cookiesToSet.forEach(({ name, value, options }) =>
                                 cookieStore.set(name, value, options)
@@ -52,11 +51,6 @@ export async function getSession() {
 
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-            // We need to know if they are an admin. 
-            // Since we can't easily query DB here without making getSession slow,
-            // we'll return the basics. Dashboards will re-verify via DB if needed.
-            // However, we MUST check if it's an admin for the AdminLayout specifically.
-            const { db } = await import('@/lib/db');
             const result = await db.query('SELECT is_admin FROM users WHERE id = $1', [user.id]);
             const isAdmin = result.rows[0]?.is_admin || false;
 
