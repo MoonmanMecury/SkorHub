@@ -36,10 +36,18 @@ export async function GET(request: NextRequest) {
 
         if (!error) {
             // If verification is successful, redirect to the success page
-            return NextResponse.redirect(new URL(next, request.url))
+            const redirectUrl = process.env.NEXT_PUBLIC_APP_URL
+                ? `${process.env.NEXT_PUBLIC_APP_URL}${next}`
+                : new URL(next, request.url).toString();
+
+            return NextResponse.redirect(redirectUrl);
         }
     }
 
     // If there's an error, redirect to sign-in with an error message
-    return NextResponse.redirect(new URL('/sign-in?error=Verification failed', request.url))
+    const errorUrl = process.env.NEXT_PUBLIC_APP_URL
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/sign-in?error=Verification failed`
+        : new URL('/sign-in?error=Verification failed', request.url).toString();
+
+    return NextResponse.redirect(errorUrl);
 }
