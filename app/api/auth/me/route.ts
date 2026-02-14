@@ -32,7 +32,18 @@ export async function GET() {
       if (sbUser) {
         const { signToken } = await import('@/lib/auth');
         const userCheck = await db.query('SELECT is_admin FROM users WHERE id = $1', [sbUser.id]);
-        const isAdmin = userCheck.rows[0]?.is_admin || false;
+        let isAdmin = false;
+
+        if (userCheck.rows.length === 0) {
+          // Sync missing user
+          await db.query(
+            'INSERT INTO users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+            [sbUser.id, sbUser.email]
+          );
+          isAdmin = false;
+        } else {
+          isAdmin = userCheck.rows[0]?.is_admin || false;
+        }
 
         const newToken = signToken({
           userId: sbUser.id,

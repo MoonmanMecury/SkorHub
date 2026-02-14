@@ -26,7 +26,7 @@ export async function getSession() {
         if (decoded) return decoded;
     }
 
-    // FALLBACK: If token is missing, check if they have a valid Supabase session
+    // Fallback: Check Supabase session if legacy token is missing or invalid
     try {
         const { createServerClient } = await import('@supabase/ssr');
         const supabase = createServerClient(
@@ -35,15 +35,28 @@ export async function getSession() {
             {
                 cookies: {
                     getAll() { return cookieStore.getAll() },
-                    setAll() { /* Read-only in this context */ },
+                    setAll(cookiesToSet) {
+                        // Note: We can't always set cookies in getSession if called during render
+                        // but we can at least try or let the caller handle it.
+                        try {
+                            cookiesToSet.forEach(({ name, value, options }) =>
+                                cookieStore.set(name, value, options)
+                            )
+                        } catch (e) {
+                            // Ignore cookie set errors in render phase
+                        }
+                    },
                 },
             }
         );
 
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-            // Need to know if admin for the payload
-            const { db } = await import('./db');
+            // We need to know if they are an admin. 
+            // Since we can't easily query DB here without making getSession slow,
+            // we'll return the basics. Dashboards will re-verify via DB if needed.
+            // However, we MUST check if it's an admin for the AdminLayout specifically.
+            const { db } = await import('@/lib/db');
             const result = await db.query('SELECT is_admin FROM users WHERE id = $1', [user.id]);
             const isAdmin = result.rows[0]?.is_admin || false;
 
@@ -53,8 +66,8 @@ export async function getSession() {
                 isAdmin: isAdmin
             };
         }
-    } catch (e) {
-        console.error("Session fallback error:", e);
+    } catch (err) {
+        console.error('getSession fallback error:', err);
     }
 
     return null;

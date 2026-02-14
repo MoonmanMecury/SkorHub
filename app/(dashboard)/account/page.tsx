@@ -1,6 +1,7 @@
 import { getUserProfile, getUserPayments } from '@/app/actions/user';
 import { getSupporterStats } from '@/app/actions/support';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,9 @@ export default async function AccountPage() {
     const payments = await getUserPayments(5, 0);
     const stats = await getSupporterStats();
 
-    if (!profile) return null;
+    if (!profile) {
+        redirect('/sign-in');
+    }
 
     const isPremium = profile.premium;
     const isSupporter = !!profile.supporter_tier;

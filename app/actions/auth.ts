@@ -55,9 +55,20 @@ export async function login(formData: FormData) {
             return { error: 'Login failed.' };
         }
 
-        // 2. Check for admin status in our public.users table (optional, for existing logic)
-        const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [data.user.id]);
-        const isAdmin = userResult.rows[0]?.is_admin || false;
+        // 2. Ensure user exists in our local public.users table (Sync if missing)
+        const userCheck = await db.query('SELECT is_admin FROM users WHERE id = $1', [data.user.id]);
+        let isAdmin = false;
+
+        if (userCheck.rows.length === 0) {
+            // User authenticated in Supabase but missing in our DB - Sync them now
+            await db.query(
+                'INSERT INTO users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+                [data.user.id, data.user.email]
+            );
+            isAdmin = false;
+        } else {
+            isAdmin = userCheck.rows[0].is_admin || false;
+        }
 
         // 3. Create Token for backward compatibility (Optional)
         const token = signToken({

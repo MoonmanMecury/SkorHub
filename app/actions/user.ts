@@ -9,7 +9,7 @@ export async function getUserProfile() {
   if (!session) return null;
 
   // Get user with active subscription and favorites count
-  const result = await db.query(`
+  let result = await db.query(`
       SELECT 
         u.id,
         u.email,
@@ -42,6 +42,17 @@ export async function getUserProfile() {
       ORDER BY s.end_date DESC
       LIMIT 1
     `, [session.userId]);
+
+  if (result.rows.length === 0) {
+    // SELF-HEALING: User exists in session (Supabase) but missing in our users table
+    await db.query(
+      'INSERT INTO users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+      [session.userId, session.email]
+    );
+
+    // Re-query to get the newly created profile
+    result = await db.query('SELECT *, FALSE as premium, 0 as favorites_count FROM users WHERE id = $1', [session.userId]);
+  }
 
   if (result.rows.length === 0) return null;
 
