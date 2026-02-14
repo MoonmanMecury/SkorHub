@@ -11,16 +11,16 @@ export async function GET(request: NextRequest) {
     const next = searchParams.get('next')
         ?? (type === 'recovery' ? '/reset-password' : '/confirm')
 
+    const code = searchParams.get('code')
+
     if (token_hash && type) {
         const cookieStore = await cookies()
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!, // Use your anon key here
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
             {
                 cookies: {
-                    getAll() {
-                        return cookieStore.getAll()
-                    },
+                    getAll() { return cookieStore.getAll() },
                     setAll(cookiesToSet) {
                         cookiesToSet.forEach(({ name, value, options }) =>
                             cookieStore.set(name, value, options)
@@ -36,7 +36,32 @@ export async function GET(request: NextRequest) {
         })
 
         if (!error) {
-            // If verification is successful, redirect to the success page
+            const redirectUrl = process.env.NEXT_PUBLIC_APP_URL
+                ? `${process.env.NEXT_PUBLIC_APP_URL}${next}`
+                : new URL(next, request.url).toString();
+
+            return NextResponse.redirect(redirectUrl);
+        }
+    } else if (code) {
+        const cookieStore = await cookies()
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+            {
+                cookies: {
+                    getAll() { return cookieStore.getAll() },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        )
+
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+        if (!error) {
             const redirectUrl = process.env.NEXT_PUBLIC_APP_URL
                 ? `${process.env.NEXT_PUBLIC_APP_URL}${next}`
                 : new URL(next, request.url).toString();

@@ -214,7 +214,7 @@ export async function requestPasswordReset(formData: FormData) {
 
         // Send reset email via Supabase
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://skor-hub.vercel.app'}/api/auth/confirm`,
+            redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://skor-hub.vercel.app'}/api/auth/confirm?next=/reset-password`,
         });
 
         if (error) {
