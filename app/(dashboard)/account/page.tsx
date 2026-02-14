@@ -2,6 +2,9 @@ import { getUserProfile, getUserPayments } from '@/app/actions/user';
 import { getSupporterStats } from '@/app/actions/support';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
+
 export default async function AccountPage() {
     const profile = await getUserProfile();
     const payments = await getUserPayments(5, 0);

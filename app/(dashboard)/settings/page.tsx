@@ -1,6 +1,9 @@
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default function SettingsPage() {
+
     return (
         <div className="max-w-7xl mx-auto pt-4 pb-20 space-y-12">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">

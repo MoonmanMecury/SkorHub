@@ -2,6 +2,9 @@
 import { getUserPayments, getUserProfile } from '@/app/actions/user';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
+
 export default async function BillingPage() {
     const profile = await getUserProfile();
     const payments = await getUserPayments(50, 0); // Get up to 50 recent payments

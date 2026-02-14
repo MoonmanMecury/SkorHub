@@ -3,6 +3,9 @@ import { isVIPSupporter } from '@/app/actions/support';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth'; // Ensure user is logged in first
 
+export const dynamic = 'force-dynamic';
+
+
 export default async function FavoritesPage() {
     const session = await getSession();
 

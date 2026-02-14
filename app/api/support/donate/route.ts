@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
 const TIER_PRICES = {
-    'one-time': { min: 10, max: 1000 },
+    'one-time': { min: 5, max: 1000 },
     'supporter': 15,
     'vip': 30,
 };
