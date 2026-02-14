@@ -7,7 +7,6 @@ import { db } from '@/lib/db';
 import { signToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { sendPasswordResetEmail } from '@/lib/email';
 
 
 export async function login(formData: FormData) {
@@ -195,50 +194,46 @@ export async function requestPasswordReset(formData: FormData) {
     if (!email) return { error: 'Email is required' };
 
     try {
-        // 1. Check if user exists
-        const userResult = await db.query('SELECT id FROM users WHERE email = $1', [email]);
-        if (userResult.rows.length === 0) {
-            // Return success even if user not found to prevent enumeration
-            return { success: true, message: 'If an account exists, a reset link has been sent.' };
-        }
+        const cookieStore = await cookies();
+        const { createServerClient } = await import('@supabase/ssr');
 
-        const userId = userResult.rows[0].id;
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+            {
+                cookies: {
+                    getAll() { return cookieStore.getAll() },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        );
 
-        // 2. Generate Token
-        // Using crypto for a random token
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        const expiresAt = new Date(Date.now() + 3600 * 1000); // 1 hour
+        // Send reset email via Supabase
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://skor-hub.vercel.app'}/api/auth/confirm?next=/reset-password`,
+        });
 
-        // 3. Save to DB
-        await db.query(`
-            INSERT INTO password_resets (user_id, token, expires_at)
-            VALUES ($1, $2, $3)
-        `, [userId, token, expiresAt.toISOString()]);
-
-        // 4. Send Email
-        const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-
-        const { error: emailError } = await sendPasswordResetEmail(email, resetLink);
-
-        if (emailError) {
-            console.error('Failed to send reset email:', emailError);
-            // We tell the user it's sent anyway to prevent enumeration, but log the error
+        if (error) {
+            console.error('Supabase Reset Error:', error);
+            // Still return success to prevent email enumeration
         }
 
         return { success: true, message: 'If an account exists, a reset link has been sent.' };
     } catch (error) {
-
         console.error('Request Reset Error:', error);
         return { error: 'Something went wrong.' };
     }
 }
 
 export async function resetPassword(formData: FormData) {
-    const token = formData.get('token') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
 
-    if (!token || !password || !confirmPassword) {
+    if (!password || !confirmPassword) {
         return { error: 'Missing fields' };
     }
 
@@ -247,30 +242,41 @@ export async function resetPassword(formData: FormData) {
     }
 
     try {
-        // 1. Verify Token
-        const result = await db.query(`
-            SELECT * FROM password_resets 
-            WHERE token = $1 
-            AND expires_at > NOW()
-            ORDER BY created_at DESC 
-            LIMIT 1
-        `, [token]);
+        const cookieStore = await cookies();
+        const { createServerClient } = await import('@supabase/ssr');
 
-        if (result.rows.length === 0) {
-            return { error: 'Invalid or expired token' };
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+            {
+                cookies: {
+                    getAll() { return cookieStore.getAll() },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        );
+
+        // Update password in Supabase Auth
+        // User must be authenticated (via the confirm redirect) for this to work
+        const { error: updateError } = await supabase.auth.updateUser({
+            password: password
+        });
+
+        if (updateError) {
+            return { error: updateError.message };
         }
 
-        const resetRecord = result.rows[0];
-
-        // 2. Hash Password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // 3. Update User
-        await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, resetRecord.user_id]);
-
-        // 4. Delete Token (and all other tokens for this user)
-        await db.query('DELETE FROM password_resets WHERE user_id = $1', [resetRecord.user_id]);
+        // Keep our local DB in sync
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, user.id]);
+        }
 
         return { success: true };
     } catch (error) {

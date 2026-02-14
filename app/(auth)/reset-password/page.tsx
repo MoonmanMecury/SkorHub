@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 function ResetPasswordForm() {
     const searchParams = useSearchParams();
-    const token = searchParams.get('token');
     const router = useRouter();
 
     const [loading, setLoading] = useState(false);
@@ -16,25 +15,12 @@ function ResetPasswordForm() {
     const [error, setError] = useState('');
     const [password, setPassword] = useState('');
 
-    if (!token) {
-        return (
-            <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0B]">
-                <div className="text-center text-white">
-                    <h2 className="text-2xl font-bold mb-4">Invalid Link</h2>
-                    <p className="text-slate-500 mb-6">This password reset link is invalid or missing a token.</p>
-                    <Link href="/forgot-password" className="text-primary hover:underline">Request a new link</Link>
-                </div>
-            </div>
-        );
-    }
 
     async function handleSubmit(formData: FormData) {
         setLoading(true);
         setError('');
         setMessage('');
 
-        // Add token to formData since it's in URL
-        formData.append('token', token as string);
 
         try {
             const result = await resetPassword(formData);
