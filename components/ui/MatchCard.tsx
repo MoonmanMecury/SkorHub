@@ -1,6 +1,7 @@
 
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { FallbackImage } from './FallbackImage';
 import { useFavorites } from '@/hooks/use-favorites';
@@ -27,9 +28,15 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
     return (
         <div className="w-full group relative block">
             <Link href={`/match/${matchId}`} className="cursor-pointer">
-                <div className="relative aspect-video rounded-[1.5rem] overflow-hidden bg-[#161618] border border-white/5 transition-all group-hover:border-primary/30 group-hover:shadow-[0_10px_40px_rgba(239,68,68,0.1)]">
+                <div className="relative aspect-video rounded-[1.5rem] overflow-hidden bg-[#161618] border border-white/5 transition-all group-hover:border-primary/30 group-hover:shadow-[0_10px_40px_rgba(239,68,68,0.15)] shadow-xl">
                     {posterUrl ? (
-                        <img src={posterUrl} alt={`${team1} vs ${team2}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <Image
+                            src={posterUrl}
+                            alt={`${team1} vs ${team2}`}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className="object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
                     ) : (
                         <FallbackImage seed={matchId} className="w-full h-full" />
                     )}
@@ -37,8 +44,14 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
                     {/* Team Badges Overlay */}
                     <div className="absolute inset-0 flex items-center justify-center gap-6 pointer-events-none z-10 transition-transform duration-500 group-hover:scale-105">
                         {homeBadge && (
-                            <div className="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center p-2.5 shadow-2xl">
-                                <img src={homeBadge} alt={team1} className="w-full h-full object-contain" />
+                            <div className="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center p-2.5 shadow-2xl overflow-hidden">
+                                <Image
+                                    src={homeBadge}
+                                    alt={team1}
+                                    width={40}
+                                    height={40}
+                                    className="w-full h-full object-contain"
+                                />
                             </div>
                         )}
 
@@ -47,8 +60,14 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
                         )}
 
                         {awayBadge && (
-                            <div className="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center p-2.5 shadow-2xl">
-                                <img src={awayBadge} alt={team2} className="w-full h-full object-contain" />
+                            <div className="w-14 h-14 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center p-2.5 shadow-2xl overflow-hidden">
+                                <Image
+                                    src={awayBadge}
+                                    alt={team2}
+                                    width={40}
+                                    height={40}
+                                    className="w-full h-full object-contain"
+                                />
                             </div>
                         )}
                     </div>

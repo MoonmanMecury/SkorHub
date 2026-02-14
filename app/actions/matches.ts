@@ -12,17 +12,19 @@ export async function fetchAllMatches() {
 }
 
 export async function fetchMatch(id: string) {
-    // streamedApi doesn't have a single match fetch by ID yet, usually it gets all and filters
-    const matches = await streamedApi.getAllMatches();
-    // Sometimes IDs are strings, sometimes numbers in APIs. convert to string for safety
-    const match = matches.find((m: any) => String(m.id) === String(id));
+    // Run both checks in parallel to minimize latency
+    const [allMatches, liveMatches] = await Promise.all([
+        streamedApi.getAllMatches(),
+        streamedApi.getLiveMatches().catch(() => [])
+    ]);
 
-    if (!match) {
-        // Double check live matches if not found in main list (sometimes APIs separate them)
-        const live = await streamedApi.getLiveMatches();
-        return live.find((m: any) => String(m.id) === String(id)) || null;
-    }
-    return match;
+    const normalize = (val: any) => String(val).toLowerCase();
+    const targetId = normalize(id);
+
+    const match = allMatches.find((m: any) => normalize(m.id) === targetId) ||
+        liveMatches.find((m: any) => normalize(m.id) === targetId);
+
+    return match || null;
 }
 
 export async function getStreamsAction(source: string, id: string) {

@@ -62,7 +62,7 @@ export const streamedApi = {
 
     getAllMatches: async (): Promise<Match[]> => {
         try {
-            const res = await fetch(`${BASE_URL}/matches/all`, { next: { revalidate: 60 } });
+            const res = await fetch(`${BASE_URL}/matches/all`, { next: { revalidate: 300 } });
             if (!res.ok) throw new Error('Failed to fetch matches');
             const data = await res.json();
             return Array.isArray(data) ? data.map(enrichMatch) : [];
@@ -74,7 +74,7 @@ export const streamedApi = {
 
     getLiveMatches: async (): Promise<Match[]> => {
         try {
-            const res = await fetch(`${BASE_URL}/matches/live`, { next: { revalidate: 30 } }); // shorter cache for live
+            const res = await fetch(`${BASE_URL}/matches/live`, { next: { revalidate: 15 } }); // shorter cache for live
             if (!res.ok) throw new Error('Failed to fetch live matches');
             const data = await res.json();
             // Original controller forced live=true for this endpoint
@@ -87,7 +87,7 @@ export const streamedApi = {
 
     getTodayMatches: async (): Promise<Match[]> => {
         try {
-            const res = await fetch(`${BASE_URL}/matches/all-today`, { next: { revalidate: 60 } });
+            const res = await fetch(`${BASE_URL}/matches/all-today`, { next: { revalidate: 120 } });
             if (!res.ok) throw new Error('Failed to fetch today matches');
             const data = await res.json();
             return Array.isArray(data) ? data.map(enrichMatch) : [];
@@ -99,7 +99,7 @@ export const streamedApi = {
 
     getMatchesBySport: async (sport: string): Promise<Match[]> => {
         try {
-            const res = await fetch(`${BASE_URL}/matches/${sport}`, { next: { revalidate: 60 } });
+            const res = await fetch(`${BASE_URL}/matches/${sport}`, { next: { revalidate: 180 } });
             if (!res.ok) throw new Error(`Failed to fetch ${sport} matches`);
             const data = await res.json();
             return Array.isArray(data) ? data.map(enrichMatch) : [];
@@ -122,7 +122,7 @@ export const streamedApi = {
 
     getSports: async (): Promise<Sport[]> => {
         try {
-            const res = await fetch(`${BASE_URL}/sports`, { next: { revalidate: 3600 } });
+            const res = await fetch(`${BASE_URL}/sports`, { next: { revalidate: 86400 } });
             if (!res.ok) throw new Error('Failed to fetch sports');
             return await res.json();
         } catch (error) {

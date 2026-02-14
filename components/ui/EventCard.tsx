@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { FallbackImage } from './FallbackImage';
 import { useFavorites } from '@/hooks/use-favorites';
 
@@ -22,7 +23,13 @@ export function EventCard({ title, time, live, imgUrl, id }: EventCardProps) {
             <Link href={`/match/${id}`} className="cursor-pointer">
                 <div className="relative aspect-[16/10] bg-[#161618] rounded-2xl overflow-hidden mb-3 border border-white/5 transition-all group-hover:border-primary/20 group-hover:scale-[1.02] shadow-lg">
                     {hasImage ? (
-                        <img alt={title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100" src={imgUrl} />
+                        <Image
+                            alt={title}
+                            src={imgUrl}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                            className="object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
+                        />
                     ) : (
                         <FallbackImage seed={id} className="w-full h-full" />
                     )}

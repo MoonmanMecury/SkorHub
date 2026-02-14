@@ -1,8 +1,15 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import VideoPlayer from './VideoPlayer';
+import dynamic from 'next/dynamic';
+const VideoPlayer = dynamic(() => import('./VideoPlayer'), {
+    ssr: false,
+    loading: () => (
+        <div className="aspect-video bg-[#161618] rounded-2xl animate-pulse border border-white/5 flex items-center justify-center">
+            <span className="material-icons text-slate-700 text-6xl">play_circle</span>
+        </div>
+    )
+});
 import { getStreamsAction } from '@/app/actions/matches';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
