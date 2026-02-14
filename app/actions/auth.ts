@@ -19,46 +19,62 @@ export async function login(formData: FormData) {
     }
 
     try {
-        // 1. Find user and check for active subscription
-        const result = await db.query(`
-          SELECT u.*, s.end_date 
-          FROM users u 
-          LEFT JOIN subscriptions s ON u.id = s.user_id 
-          AND s.status = 'active' 
-          AND s.end_date > NOW()
-          WHERE u.email = $1
-          ORDER BY s.end_date DESC LIMIT 1
-        `, [email]);
+        const cookieStore = await cookies();
+        const { createServerClient } = await import('@supabase/ssr');
 
-        if (result.rows.length === 0) {
-            return { error: 'Invalid credentials' };
-        }
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+            {
+                cookies: {
+                    getAll() {
+                        return cookieStore.getAll()
+                    },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        );
 
-        const user = result.rows[0];
-
-        // 2. Check password
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
-            return { error: 'Invalid credentials' };
-        }
-
-        // 3. Create Token
-        const token = signToken({
-            userId: user.id,
-            email: user.email,
-            isAdmin: user.is_admin
+        // 1. Sign in with Supabase Auth
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
         });
 
-        // 4. Set Cookie
-        const cookieStore = await cookies();
+        if (signInError) {
+            if (signInError.message.toLowerCase().includes('email not confirmed')) {
+                return { error: 'Please verify your email address before signing in.' };
+            }
+            return { error: 'Invalid email or password.' };
+        }
+
+        if (!data.user) {
+            return { error: 'Login failed.' };
+        }
+
+        // 2. Check for admin status in our public.users table (optional, for existing logic)
+        const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [data.user.id]);
+        const isAdmin = userResult.rows[0]?.is_admin || false;
+
+        // 3. Create Token for backward compatibility (Optional)
+        const token = signToken({
+            userId: data.user.id,
+            email: data.user.email,
+            isAdmin: isAdmin
+        });
+
         cookieStore.set('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60, // 7 days
+            maxAge: 7 * 24 * 60 * 60,
             path: '/',
         });
 
-        return { success: true, isAdmin: user.is_admin };
+        return { success: true, isAdmin };
     } catch (error) {
         console.error('Login error:', error);
         return { error: 'Server error' };
@@ -94,13 +110,18 @@ export async function register(formData: FormData) {
             }
         );
 
-        // 1. Sign up with Supabase Auth
-        // This will automatically send a confirmation email if enabled in Supabase Dashboard
+        // 1. Explicitly check if account already exists in our public users table
+        const existingCheck = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+        if (existingCheck.rows.length > 0) {
+            return { error: 'An account with this email already exists.' };
+        }
+
+        // 2. Sign up with Supabase Auth
         const { data, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
             options: {
-                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://skor-hub.vercel.app'}/api/auth/confirm`,
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://skor-hub.vercel.app'}/api/auth/confirm?next=/confirm`,
             },
         });
 
@@ -108,22 +129,24 @@ export async function register(formData: FormData) {
             return { error: signUpError.message };
         }
 
-        // 2. We also want to keep our custom users table in sync
-        // Note: For a production app, you should use a Supabase Trigger on auth.users 
-        // to automatically insert into public.users.
-        // For now, we'll manually insert if account exists but not in our table
-        const userCheck = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (userCheck.rows.length === 0 && data.user) {
+        // 3. Prevent duplicate signups if Supabase configuration allows silent signups
+        // If identities is empty and session is null, it usually means the user exists but isn't confirmed
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+            return { error: 'An account with this email already exists. Please sign in.' };
+        }
+
+        // 4. Sync into public.users
+        if (data.user) {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
             await db.query(
-                'INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)',
+                'INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING',
                 [data.user.id, email, hashedPassword]
             );
         }
 
-        // Check if email confirmation is required (Supabase setting)
-        const isConfirmed = data.user?.identities?.length === 0 || data.session !== null;
+        // Check if confirmation message should be shown
+        const isConfirmed = data.session !== null;
 
         if (!isConfirmed) {
             return {
@@ -141,7 +164,28 @@ export async function register(formData: FormData) {
 
 export async function logout() {
     const cookieStore = await cookies();
+    const { createServerClient } = await import('@supabase/ssr');
+
+    // 1. Clear Supabase Session (Strictly DB dependent)
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll() },
+                setAll(cookiesToSet) {
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        cookieStore.set(name, value, options)
+                    )
+                },
+            },
+        }
+    );
+    await supabase.auth.signOut();
+
+    // 2. Clear our custom cookie
     cookieStore.delete('token');
+
     redirect('/sign-in');
 }
 
