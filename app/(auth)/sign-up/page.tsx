@@ -16,6 +16,8 @@ export default function SignUpPage() {
     const [password, setPassword] = useState('');
     const [strength, setStrength] = useState(0);
 
+    const [successMessage, setSuccessMessage] = useState('');
+
     async function handleSubmit(formData: FormData) {
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -28,11 +30,14 @@ export default function SignUpPage() {
 
         setLoading(true);
         setError('');
+        setSuccessMessage('');
 
         try {
             const result = await register(formData);
             if (result?.error) {
                 setError(result.error);
+            } else if (result?.requiresConfirmation) {
+                setSuccessMessage(result.message || 'Check your email for confirmation link.');
             } else {
                 await mutate();
                 router.push('/support'); // Redirect to support page
@@ -64,6 +69,13 @@ export default function SignUpPage() {
                     {error && (
                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-bold">
                             {error}
+                        </div>
+                    )}
+
+                    {successMessage && (
+                        <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-500 text-sm font-bold text-center">
+                            <span className="material-icons text-4xl mb-2 block">mark_email_read</span>
+                            {successMessage}
                         </div>
                     )}
 

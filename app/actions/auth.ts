@@ -74,34 +74,63 @@ export async function register(formData: FormData) {
     }
 
     try {
-        // 1. Check if user exists
-        const userCheck = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (userCheck.rows.length > 0) {
-            return { error: 'User already exists' };
-        }
+        const cookieStore = await cookies();
+        const { createServerClient } = await import('@supabase/ssr');
 
-        // 2. Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // 3. Insert into Supabase
-        const newUser = await db.query(
-            'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at',
-            [email, hashedPassword]
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+            {
+                cookies: {
+                    getAll() {
+                        return cookieStore.getAll()
+                    },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
+                    },
+                },
+            }
         );
 
-        const user = newUser.rows[0];
-
-        // 4. Create Token and Set Cookie
-        const token = signToken({ userId: user.id, email: user.email });
-
-        const cookieStore = await cookies();
-        cookieStore.set('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 7 * 24 * 60 * 60, // 7 days
-            path: '/',
+        // 1. Sign up with Supabase Auth
+        // This will automatically send a confirmation email if enabled in Supabase Dashboard
+        const { data, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://skor-hub.vercel.app'}/api/auth/confirm`,
+            },
         });
+
+        if (signUpError) {
+            return { error: signUpError.message };
+        }
+
+        // 2. We also want to keep our custom users table in sync
+        // Note: For a production app, you should use a Supabase Trigger on auth.users 
+        // to automatically insert into public.users.
+        // For now, we'll manually insert if account exists but not in our table
+        const userCheck = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (userCheck.rows.length === 0 && data.user) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            await db.query(
+                'INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)',
+                [data.user.id, email, hashedPassword]
+            );
+        }
+
+        // Check if email confirmation is required (Supabase setting)
+        const isConfirmed = data.user?.identities?.length === 0 || data.session !== null;
+
+        if (!isConfirmed) {
+            return {
+                requiresConfirmation: true,
+                message: 'Welcome! Please check your email to verify your account before signing in.'
+            };
+        }
 
         return { success: true };
     } catch (error) {

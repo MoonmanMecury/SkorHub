@@ -1,0 +1,45 @@
+
+import { type EmailOtpType } from '@supabase/supabase-js'
+import { type NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export async function GET(request: NextRequest) {
+    const { searchParams } = new URL(request.url)
+    const token_hash = searchParams.get('token_hash')
+    const type = searchParams.get('type') as EmailOtpType | null
+    const next = searchParams.get('next') ?? '/confirm'
+
+    if (token_hash && type) {
+        const cookieStore = await cookies()
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!, // Use your anon key here
+            {
+                cookies: {
+                    getAll() {
+                        return cookieStore.getAll()
+                    },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        )
+
+        const { error } = await supabase.auth.verifyOtp({
+            type,
+            token_hash,
+        })
+
+        if (!error) {
+            // If verification is successful, redirect to the success page
+            return NextResponse.redirect(new URL(next, request.url))
+        }
+    }
+
+    // If there's an error, redirect to sign-in with an error message
+    return NextResponse.redirect(new URL('/sign-in?error=Verification failed', request.url))
+}

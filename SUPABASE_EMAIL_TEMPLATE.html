@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Confirm Your Email - SKoRHuB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type="text/css">
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lexend:wght@600&display=swap');
+
+        body,
+        table,
+        td,
+        a {
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        table,
+        td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+
+        img {
+            -ms-interpolation-mode: bicubic;
+        }
+
+        a[x-apple-data-detectors] {
+            font-family: inherit !important;
+            font-size: inherit !important;
+            font-weight: inherit !important;
+            line-height: inherit !important;
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+
+        body {
+            width: 100% !important;
+            height: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background-color: #0A0A0B;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #FFFFFF;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .logo {
+            font-family: 'Lexend', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            color: #FFFFFF;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-style: italic;
+        }
+
+        .logo-accent {
+            color: #EF4444;
+        }
+
+        .content {
+            background-color: #161618;
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        h1 {
+            font-family: 'Lexend', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 0;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            font-style: italic;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #A1A1AA;
+            margin-bottom: 24px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 32px 0;
+        }
+
+        .button {
+            background-color: #EF4444;
+            color: #FFFFFF !important;
+            padding: 16px 40px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 14px;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.2);
+        }
+
+        .footer {
+            padding: 30px;
+            text-align: center;
+            font-size: 11px;
+            color: #52525B;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+        }
+
+        .footer a {
+            color: #EF4444;
+            text-decoration: none;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.05);
+            margin: 32px 0;
+        }
+
+        .fallback-text {
+            font-size: 11px;
+            color: #52525B;
+            word-break: break-all;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="https://skorhub.com" class="logo"><span class="logo-accent">S</span>korHub</a>
+        </div>
+
+        <div class="content">
+            <!-- FOR CONFIRM EMAIL: Update title to "Welcome to the Club" -->
+            <!-- FOR RESET PASSWORD: Update title to "Password Reset Request" -->
+            <h1>Confirm Your Identity</h1>
+            <p>Ready to start your premium sports experience? Please confirm your email address by clicking the button
+                below. This helps us keep your account secure.</p>
+
+            <div class="button-container">
+                <a href="{{ .ConfirmationURL }}" class="button">Verify Account</a>
+            </div>
+
+            <p>If you didn't request this email, you can safely ignore it. This link will expire shortly for your
+                security.</p>
+
+            <div class="divider"></div>
+
+            <p class="fallback-text">
+                BUTTON NOT WORKING? PASTE THIS IN YOUR BROWSER:<br>
+                <a href="{{ .ConfirmationURL }}" style="color: #71717A;">{{ .ConfirmationURL }}</a>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 SKoRHuB &bull; PREMIUM SPORTS DIRECTORY</p>
+            <p>
+                <a href="https://skorhub.com/support">Support</a> &bull;
+                <a href="https://skorhub.com/privacy">Privacy</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>
+
+<!-- SUPABASE NOTES:
+1. Confirm Signup: Use as is with {{ .ConfirmationURL }}
+2. Magic Link: Use {{ .ConfirmationURL }} and change text to "Sign In"
+3. Reset Password: Use {{ .ConfirmationURL }} and change text to "Reset Password"
+4. Change Email: Use {{ .ConfirmationURL }} and change text to "Confirm New Email"
+-->
