@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Lexend } from 'next/font/google'
 import './globals.css'
+import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 const lexend = Lexend({ subsets: ['latin'], variable: '--font-display' })
@@ -27,6 +28,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   )
