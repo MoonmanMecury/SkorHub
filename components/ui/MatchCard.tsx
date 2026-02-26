@@ -95,13 +95,18 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
                     e.stopPropagation();
                     toggleFavorite(matchId);
                 }}
-                className={`absolute bottom-16 right-4 z-30 w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-2xl border ${isFav
+                aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                className={`absolute bottom-16 right-4 z-30 w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-2xl border outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:opacity-100 ${isFav
                     ? 'bg-primary text-white border-primary/50'
                     : 'bg-black/60 text-white/50 border-white/10 hover:border-primary/50 hover:text-white backdrop-blur-md opacity-0 group-hover:opacity-100'
                     }`}
             >
-                <span className={`material-symbols-outlined text-xl ${isFav ? 'fill-current' : ''}`}>
-                    {isFav ? 'star' : 'star'}
+                <span
+                    className="material-symbols-outlined text-xl block"
+                    style={{ fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                    star
                 </span>
             </button>
 
