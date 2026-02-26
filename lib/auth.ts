@@ -4,18 +4,22 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { db } from '@/lib/db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_during_dev';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required. Please provide it in your environment or .env file.');
+}
 
 export function verifyToken(token: string): any {
     try {
-        return jwt.verify(token, JWT_SECRET);
+        return jwt.verify(token, JWT_SECRET!);
     } catch (err) {
         return null;
     }
 }
 
 export function signToken(payload: any): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+    return jwt.sign(payload, JWT_SECRET!, { expiresIn: '7d' });
 }
 
 // Server Component / API helper to get current session
