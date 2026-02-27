@@ -16,7 +16,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-2 flex-shrink-0">
                     <MobileNav navType="home" />
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 group">
+                    <Link href="/" className="flex items-center gap-2 group" aria-label="SkorHub Home">
                         <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
                             <span className="material-icons text-white text-2xl">play_circle</span>
                         </div>
