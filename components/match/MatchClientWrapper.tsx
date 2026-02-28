@@ -119,7 +119,7 @@ export default function MatchClientWrapper({ initialMatch, matchId }: MatchClien
             <div className="lg:col-span-3 space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Link href="/" className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                        <Link href="/" aria-label="Go back to home" className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
                             <span className="material-icons text-slate-400 text-sm">arrow_back</span>
                         </Link>
                         <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase flex items-center gap-2">
@@ -252,17 +252,25 @@ export default function MatchClientWrapper({ initialMatch, matchId }: MatchClien
                     <div className="grid grid-cols-2 gap-2 pt-4 border-t border-white/5">
                         <button
                             onClick={() => toggleFavorite(matchId)}
+                            aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
                             className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all border ${isFav
                                 ? 'bg-primary border-primary text-white shadow-lg'
                                 : 'bg-white/5 border-transparent text-slate-500 hover:bg-white/10'
                                 }`}
                         >
-                            <span className={`material-symbols-outlined text-sm mb-1 ${isFav ? 'fill-current' : ''}`}>star</span>
+                            <span
+                                className="material-symbols-outlined text-sm mb-1"
+                                style={{ fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0" }}
+                            >
+                                star
+                            </span>
                             <span className="text-[8px] font-black uppercase tracking-widest">Save</span>
                         </button>
                         <div className="relative group/share">
                             <button
                                 onClick={() => setShowShareMenu(!showShareMenu)}
+                                aria-label="Share this match"
+                                aria-expanded={showShareMenu}
                                 className="w-full h-full flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 border border-transparent text-slate-500 hover:bg-white/10 transition-all"
                             >
                                 <span className="material-icons text-sm mb-1">share</span>
