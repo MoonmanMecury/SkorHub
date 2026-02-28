@@ -50,13 +50,17 @@ export function EventCard({ title, time, live, imgUrl, id }: EventCardProps) {
                     e.stopPropagation();
                     toggleFavorite(id);
                 }}
+                aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
                 className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-xl border flex items-center justify-center transition-all z-20 ${isFav
                     ? 'bg-primary text-white border-primary/50'
-                    : 'bg-black/40 text-white/50 border-white/10 hover:text-yellow-400 backdrop-blur-md opacity-0 group-hover:opacity-100'
+                    : 'bg-black/40 text-white/50 border-white/10 hover:text-yellow-400 backdrop-blur-md opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
                     }`}
             >
-                <span className={`material-symbols-outlined text-[16px] ${isFav ? 'fill-current' : ''}`}>
-                    {isFav ? 'star' : 'star'}
+                <span
+                    className="material-symbols-outlined text-[16px]"
+                    style={{ fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0" }}
+                >
+                    star
                 </span>
             </button>
 
