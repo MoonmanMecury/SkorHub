@@ -15,17 +15,17 @@ export function FavoritesGrid() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (isLoaded && favorites.length > 0) {
+        if (isLoaded && favorites.size > 0) {
             // Lazy background cleanup of stale entries
             cleanupFavoritesAction();
         }
-    }, [isLoaded, favorites.length]);
+    }, [isLoaded, favorites.size]);
 
     useEffect(() => {
         async function loadMatches() {
             try {
                 const allMatches = await streamedApi.getAllMatches();
-                const favMatches = allMatches.filter(m => favorites.includes(m.id));
+                const favMatches = allMatches.filter(m => favorites.has(String(m.id)));
                 setMatches(favMatches);
             } catch (error) {
                 console.error('Failed to load favorite matches:', error);
