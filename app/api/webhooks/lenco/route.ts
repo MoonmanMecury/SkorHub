@@ -19,16 +19,28 @@ export async function POST(request: NextRequest) {
         const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
         const signature = request.headers.get('x-lenco-signature');
 
-        if (hashKey && signature) {
-            const hmac = crypto
-                .createHmac('sha256', hashKey)
-                .update(rawBody)
-                .digest('hex');
+        if (!hashKey) {
+            console.error('[Webhook] Missing LENCO_WEBHOOK_HASH_KEY');
+            return NextResponse.json({ error: 'Webhook configuration error' }, { status: 500 });
+        }
 
-            if (hmac !== signature) {
-                console.error('[Webhook] Signature mismatch');
-                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-            }
+        if (!signature) {
+            console.error('[Webhook] Missing x-lenco-signature header');
+            return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+        }
+
+        const hmac = crypto
+            .createHmac('sha256', hashKey)
+            .update(rawBody)
+            .digest('hex');
+
+        // Use timingSafeEqual to prevent timing attacks
+        const hmacBuffer = Buffer.from(hmac, 'hex');
+        const signatureBuffer = Buffer.from(signature, 'hex');
+
+        if (hmacBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmacBuffer, signatureBuffer)) {
+            console.error('[Webhook] Signature mismatch');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
 
         // Lenco passes the transaction data in the body
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Event ignored' });
         }
 
-        const { reference, amount, currency, status, customer } = data;
+        const { reference, amount, status } = data;
 
         if (status !== 'successful') {
             return NextResponse.json({ message: 'Status not successful' });
