@@ -252,12 +252,18 @@ export default function MatchClientWrapper({ initialMatch, matchId }: MatchClien
                     <div className="grid grid-cols-2 gap-2 pt-4 border-t border-white/5">
                         <button
                             onClick={() => toggleFavorite(matchId)}
-                            className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all border ${isFav
+                            aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all border outline-none focus-visible:ring-2 focus-visible:ring-primary ${isFav
                                 ? 'bg-primary border-primary text-white shadow-lg'
                                 : 'bg-white/5 border-transparent text-slate-500 hover:bg-white/10'
                                 }`}
                         >
-                            <span className={`material-symbols-outlined text-sm mb-1 ${isFav ? 'fill-current' : ''}`}>star</span>
+                            <span
+                                className="material-symbols-outlined text-sm mb-1"
+                                style={isFav ? { fontVariationSettings: "'FILL' 1" } : {}}
+                            >
+                                star
+                            </span>
                             <span className="text-[8px] font-black uppercase tracking-widest">Save</span>
                         </button>
                         <div className="relative group/share">
