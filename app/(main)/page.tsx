@@ -3,19 +3,29 @@ import Link from 'next/link';
 import { streamedApi } from '@/lib/streamed';
 import { SportsGrid } from '@/components/ui/SportsGrid';
 import { AdPlaceholder } from '@/components/ui/AdPlaceholder';
+import { Match } from '@/types';
+import { MatchCard } from '@/components/ui/MatchCard';
+import { EventCard } from '@/components/ui/EventCard';
 
 export default async function Home() {
-    const liveMatches = await streamedApi.getLiveMatches();
-    const allMatches = await streamedApi.getAllMatches();
-    const sports = await streamedApi.getSports();
+    // Parallelize data fetching to reduce TTFB by eliminating the await waterfall
+    const [liveMatches, allMatches, sports] = await Promise.all([
+        streamedApi.getLiveMatches(),
+        streamedApi.getAllMatches(),
+        streamedApi.getSports()
+    ]);
 
-    // Group matches by category
-    const matchesByCategory = allMatches.reduce((acc: { [key: string]: any[] }, match) => {
+    // Group matches by category with explicit type for better performance and safety
+    const matchesByCategory = allMatches.reduce((acc: Record<string, Match[]>, match) => {
         const cat = match.sportCategory.toLowerCase();
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(match);
         return acc;
     }, {});
+
+    // Use a Set for O(1) lookups instead of nested .find() calls (O(N*M))
+    const liveIds = new Set(liveMatches.map(m => m.id));
+    const upcomingMatches = allMatches.filter(m => !liveIds.has(m.id)).slice(0, 18);
 
     return (
         <div className="max-w-7xl mx-auto px-4 pt-2 pb-10 space-y-12">
@@ -117,7 +127,7 @@ export default async function Home() {
                     <Link href="/schedule" className="text-xs font-black uppercase tracking-widest text-primary hover:underline">Full Schedule</Link>
                 </div>
                 <div className="flex overflow-x-auto snap-x hide-scrollbar -mx-4 px-4 gap-4 pb-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 sm:gap-4 sm:pb-0 sm:mx-0 sm:px-0">
-                    {allMatches.filter(m => !liveMatches.find(l => l.id === m.id)).slice(0, 18).map(match => (
+                    {upcomingMatches.map(match => (
                         <div key={match.id} className="snap-center flex-none w-64 max-w-[80vw] sm:w-auto sm:max-w-none">
                             <EventCard
                                 id={match.id}
@@ -134,8 +144,3 @@ export default async function Home() {
         </div>
     );
 }
-
-
-// Component imports at bottom to avoid circular dep issues in some Next.js versions/configs if in same file
-import { MatchCard } from '@/components/ui/MatchCard';
-import { EventCard } from '@/components/ui/EventCard';
