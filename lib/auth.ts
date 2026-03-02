@@ -4,17 +4,21 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { db } from '@/lib/db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_during_dev';
+const JWT_SECRET = process.env.JWT_SECRET;
 
-export function verifyToken(token: string): any {
+if (!JWT_SECRET) {
+    throw new Error('CRITICAL: JWT_SECRET environment variable is not defined.');
+}
+
+export function verifyToken(token: string): unknown {
     try {
         return jwt.verify(token, JWT_SECRET);
-    } catch (err) {
+    } catch {
         return null;
     }
 }
 
-export function signToken(payload: any): string {
+export function signToken(payload: Record<string, unknown>): string {
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
@@ -41,7 +45,7 @@ export async function getSession() {
                             cookiesToSet.forEach(({ name, value, options }) =>
                                 cookieStore.set(name, value, options)
                             )
-                        } catch (e) {
+                        } catch {
                             // Ignore cookie set errors in render phase
                         }
                     },
