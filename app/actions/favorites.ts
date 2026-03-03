@@ -81,12 +81,15 @@ export async function cleanupFavoritesAction() {
         );
         if (userFavs.rows.length === 0) return { success: true };
 
-        // 2. Get active matches from API
-        const allMatches = await streamedApi.getAllMatches();
-        const liveMatches = await streamedApi.getLiveMatches();
+        // 2. Get active matches from API in parallel
+        const [allMatches, liveMatches] = await Promise.all([
+            streamedApi.getAllMatches(),
+            streamedApi.getLiveMatches()
+        ]);
+
         const validIds = new Set([
-            ...allMatches.map((m: any) => String(m.id)),
-            ...liveMatches.map((m: any) => String(m.id))
+            ...allMatches.map((m) => String(m.id)),
+            ...liveMatches.map((m) => String(m.id))
         ]);
 
         // 3. Identify IDs that exist in DB but are gone from API
