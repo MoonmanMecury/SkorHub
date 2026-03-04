@@ -54,9 +54,9 @@ export function EventListRow({ id, title, time, live, category, homeBadge, awayB
                         </div>
                     </div>
 
-                    <button className="px-6 py-2 bg-white/5 group-hover:bg-primary border border-white/10 group-hover:border-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">
+                    <span className="px-6 py-2 bg-white/5 group-hover:bg-primary border border-white/10 group-hover:border-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">
                         Watch
-                    </button>
+                    </span>
                 </div>
             </Link>
 
@@ -67,10 +67,13 @@ export function EventListRow({ id, title, time, live, category, homeBadge, awayB
                     e.stopPropagation();
                     toggleFavorite(id);
                 }}
-                className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg border flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 group-hover:translate-x-2 ${isFav ? 'bg-primary text-white border-primary/50 opacity-100 translate-x-2' : 'bg-[#0A0A0B] text-slate-500 border-white/10'
+                aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg border flex items-center justify-center transition-all group-hover:translate-x-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${isFav
+                    ? 'bg-primary text-white border-primary/50 opacity-100 translate-x-2'
+                    : 'bg-[#0A0A0B] text-slate-500 border-white/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:translate-x-2'
                     }`}
             >
-                <span className={`material-symbols-outlined text-sm ${isFav ? 'fill-current' : ''}`}>star</span>
+                <span className={`material-symbols-outlined text-sm ${isFav ? 'fill-current' : ''}`} aria-hidden="true">star</span>
             </button>
         </div>
     );
