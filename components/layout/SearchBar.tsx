@@ -58,6 +58,7 @@ export function SearchBar() {
                 <input
                     className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-4 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'}`}
                     placeholder="Search events, teams or live matches..."
+                    aria-label="Search events, teams or live matches"
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
