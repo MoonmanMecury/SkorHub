@@ -1,0 +1,4 @@
+## 2025-05-15 - Lenco Webhook Hardening
+**Vulnerability:** The Lenco webhook signature verification was optional (only checked if both key and header were present) and used standard string comparison, which is susceptible to timing attacks. Additionally, the SQL update query used string interpolation for a dynamic SQL fragment (`expiresAt`).
+**Learning:** Webhook handlers often skip strict validation if environment variables are missing during initial development, creating a "fail-open" state. Interpolating SQL fragments, even if they seem like constants, bypasses the protections of parameterized queries.
+**Prevention:** Always use `crypto.timingSafeEqual` with a length check for signature validation. Ensure all dynamic logic in SQL is handled via parameterized inputs or SQL `CASE` statements rather than string manipulation in the application layer.
