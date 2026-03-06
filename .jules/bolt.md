@@ -1,0 +1,3 @@
+## 2025-05-22 - FavoritesProvider for Centralized State and O(1) Lookups
+**Learning:** Moving from hook-based state to a centralized Context Provider for frequently used data (like user favorites) prevents redundant API calls across multiple components on the same page and ensures consistent UI state. Using a `Set` for lookups within the context further optimizes performance to O(1) for high-density lists.
+**Action:** Always check if a hook that manages state/side-effects is being used in multiple components on a single page, and if so, consider moving it to a Context Provider at the appropriate layout level.
