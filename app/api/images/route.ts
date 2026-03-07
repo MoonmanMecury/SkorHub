@@ -9,12 +9,34 @@ export async function GET(request: Request) {
         return new Response('Missing URL parameter', { status: 400 });
     }
 
+    // SSRF Prevention: Validate URL and Hostname
+    let validatedUrl: URL;
+    try {
+        validatedUrl = new URL(imageUrl);
+        if (!['http:', 'https:'].includes(validatedUrl.protocol)) {
+            return new Response('Invalid protocol', { status: 400 });
+        }
+
+        const allowedHostnames = ['streamed.pk', 'www.streamed.pk'];
+        const isAllowedHost = allowedHostnames.some(host =>
+            validatedUrl.hostname === host || validatedUrl.hostname.endsWith('.' + host)
+        );
+
+        if (!isAllowedHost) {
+            console.warn(`SSRF Prevention: Blocked request to untrusted host: ${validatedUrl.hostname}`);
+            return new Response('Untrusted hostname', { status: 403 });
+        }
+    } catch {
+        return new Response('Invalid URL format', { status: 400 });
+    }
+
     try {
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
-        const response = await fetch(imageUrl, {
+        const response = await fetch(validatedUrl.toString(), {
             headers: {
+                // Only send API key to trusted host
                 'X-API-KEY': apiKey || '',
                 'Accept': 'image/*',
                 'Referer': 'https://streamed.pk/' // Common requirement for sports streamers
@@ -36,7 +58,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
