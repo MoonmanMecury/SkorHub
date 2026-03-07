@@ -1,0 +1,42 @@
+
+> skorhub@0.1.0 dev /app
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 1160ms
+○ Compiling / ...
+ GET / 200 in 7.2s (compile: 4.8s, render: 2.3s)
+getSession fallback error: Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at getSession (lib/auth.ts:33:44)
+    at async GET (app/api/auth/me/route.ts:11:19)
+  31 |     // Fallback: Check Supabase session if legacy token is missing or invalid
+  32 |     try {
+> 33 |         const supabase = createServerClient(
+     |                                            ^
+  34 |             process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  35 |             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+  36 |             {
+Auth Me Error: Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at GET (app/api/auth/me/route.ts:15:42)
+  13 |     // Re-sync: If custom token is missing but Supabase session exists, recreate the token
+  14 |     if (!session) {
+> 15 |       const supabase = createServerClient(
+     |                                          ^
+  16 |         process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  17 |         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+  18 |         {
+ GET /api/auth/me 500 in 1511ms (compile: 1078ms, render: 433ms)
