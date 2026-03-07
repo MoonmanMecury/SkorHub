@@ -4,18 +4,24 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { db } from '@/lib/db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_during_dev';
+const JWT_SECRET = process.env.JWT_SECRET;
 
-export function verifyToken(token: string): any {
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is missing in production!');
+}
+
+const SECRET = JWT_SECRET || 'fallback_secret_during_dev';
+
+export function verifyToken(token: string): unknown {
     try {
-        return jwt.verify(token, JWT_SECRET);
-    } catch (err) {
+        return jwt.verify(token, SECRET);
+    } catch {
         return null;
     }
 }
 
-export function signToken(payload: any): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+export function signToken(payload: Record<string, unknown>): string {
+    return jwt.sign(payload, SECRET, { expiresIn: '7d' });
 }
 
 // Server Component / API helper to get current session
@@ -41,7 +47,7 @@ export async function getSession() {
                             cookiesToSet.forEach(({ name, value, options }) =>
                                 cookieStore.set(name, value, options)
                             )
-                        } catch (e) {
+                        } catch {
                             // Ignore cookie set errors in render phase
                         }
                     },
