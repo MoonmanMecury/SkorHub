@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 }
 
 import { AuthProvider } from '@/components/providers/AuthProvider'
+import { FavoritesProvider } from '@/components/providers/FavoritesProvider'
 
 export default function RootLayout({
   children,
@@ -28,7 +29,9 @@ export default function RootLayout({
       </head>
       <body className="bg-background-dark font-sans text-white antialiased selection:bg-primary selection:text-white min-h-screen flex flex-col">
         <AuthProvider>
-          {children}
+          <FavoritesProvider>
+            {children}
+          </FavoritesProvider>
         </AuthProvider>
       </body>
     </html>

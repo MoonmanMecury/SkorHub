@@ -6,13 +6,16 @@ import { RedirectAlert } from '@/components/ui/RedirectAlert';
 export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    // Fetch sports to get the proper name
-    const sports = await streamedApi.getSports();
+    // Parallelize sports and matches fetching
+    const [sports, allMatches] = await Promise.all([
+        streamedApi.getSports(),
+        streamedApi.getAllMatches()
+    ]);
+
     const sport = sports.find(s => s.id.toLowerCase() === id.toLowerCase());
     const sportName = sport ? sport.name : id.toUpperCase();
 
-    // Fetch matches for this sport
-    const allMatches = await streamedApi.getAllMatches();
+    // Filter matches for this sport
     const matches = allMatches.filter(m => m.sportCategory.toLowerCase() === id.toLowerCase());
 
     if (matches.length === 0) {
