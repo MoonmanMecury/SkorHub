@@ -27,8 +27,8 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
 
     return (
         <div className="w-full group relative block">
-            <Link href={`/match/${matchId}`} className="cursor-pointer">
-                <div className="relative aspect-video rounded-[1.5rem] overflow-hidden bg-[#161618] border border-white/5 transition-all group-hover:border-primary/30 group-hover:shadow-[0_10px_40px_rgba(239,68,68,0.15)] shadow-xl">
+            <Link href={`/match/${matchId}`} className="cursor-pointer block outline-none">
+                <div className="relative aspect-video rounded-[1.5rem] overflow-hidden bg-[#161618] border border-white/5 transition-all group-hover:border-primary/30 group-hover:shadow-[0_10px_40px_rgba(239,68,68,0.15)] shadow-xl group-focus-within:ring-2 group-focus-within:ring-primary group-focus-within:border-primary/30">
                     {posterUrl ? (
                         <Image
                             src={posterUrl}
@@ -86,6 +86,13 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
                 </div>
+
+                <div className="mt-4 px-1">
+                    <h4 className="font-black text-sm uppercase italic tracking-tight group-hover:text-primary transition-colors text-white line-clamp-1">{team1} <span className="text-primary NOT-italic">vs</span> {team2}</h4>
+                    <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest leading-none flex items-center gap-2">
+                        <span className="w-4 h-[1px] bg-slate-800"></span> {meta}
+                    </p>
+                </div>
             </Link>
 
             {/* Favorite Button - Separate from Link */}
@@ -95,22 +102,16 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
                     e.stopPropagation();
                     toggleFavorite(matchId);
                 }}
-                className={`absolute bottom-16 right-4 z-30 w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-2xl border ${isFav
-                    ? 'bg-primary text-white border-primary/50'
+                aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+                className={`absolute bottom-16 right-4 z-30 w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-2xl border outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary ${isFav
+                    ? 'bg-primary text-white border-primary/50 opacity-100'
                     : 'bg-black/60 text-white/50 border-white/10 hover:border-primary/50 hover:text-white backdrop-blur-md opacity-0 group-hover:opacity-100'
                     }`}
             >
-                <span className={`material-symbols-outlined text-xl ${isFav ? 'fill-current' : ''}`}>
-                    {isFav ? 'star' : 'star'}
+                <span className={`material-symbols-outlined text-xl ${isFav ? 'filled' : ''}`}>
+                    star
                 </span>
             </button>
-
-            <div className="mt-4 px-1">
-                <h4 className="font-black text-sm uppercase italic tracking-tight group-hover:text-primary transition-colors text-white line-clamp-1">{team1} <span className="text-primary NOT-italic">vs</span> {team2}</h4>
-                <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest leading-none flex items-center gap-2">
-                    <span className="w-4 h-[1px] bg-slate-800"></span> {meta}
-                </p>
-            </div>
         </div>
     );
 }

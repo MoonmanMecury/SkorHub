@@ -20,8 +20,8 @@ export function EventCard({ title, time, live, imgUrl, id }: EventCardProps) {
 
     return (
         <div className="block group relative">
-            <Link href={`/match/${id}`} className="cursor-pointer">
-                <div className="relative aspect-[16/10] bg-[#161618] rounded-2xl overflow-hidden mb-3 border border-white/5 transition-all group-hover:border-primary/20 group-hover:scale-[1.02] shadow-lg">
+            <Link href={`/match/${id}`} className="cursor-pointer block outline-none">
+                <div className="relative aspect-[16/10] bg-[#161618] rounded-2xl overflow-hidden mb-3 border border-white/5 transition-all group-hover:border-primary/20 group-hover:scale-[1.02] shadow-lg group-focus-within:ring-2 group-focus-within:ring-primary group-focus-within:border-primary/20">
                     {hasImage ? (
                         <Image
                             alt={title}
@@ -41,6 +41,14 @@ export function EventCard({ title, time, live, imgUrl, id }: EventCardProps) {
                         </div>
                     )}
                 </div>
+
+                <div className="px-1">
+                    <h5 className="text-[11px] font-black uppercase italic tracking-tight line-clamp-1 text-white group-hover:text-primary transition-colors">{title}</h5>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="w-2 h-[1px] bg-slate-800"></span>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{time}</p>
+                    </div>
+                </div>
             </Link>
 
             {/* Favorite Button */}
@@ -50,23 +58,16 @@ export function EventCard({ title, time, live, imgUrl, id }: EventCardProps) {
                     e.stopPropagation();
                     toggleFavorite(id);
                 }}
-                className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-xl border flex items-center justify-center transition-all z-20 ${isFav
-                    ? 'bg-primary text-white border-primary/50'
+                aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+                className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-xl border flex items-center justify-center transition-all z-20 outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary ${isFav
+                    ? 'bg-primary text-white border-primary/50 opacity-100'
                     : 'bg-black/40 text-white/50 border-white/10 hover:text-yellow-400 backdrop-blur-md opacity-0 group-hover:opacity-100'
                     }`}
             >
-                <span className={`material-symbols-outlined text-[16px] ${isFav ? 'fill-current' : ''}`}>
-                    {isFav ? 'star' : 'star'}
+                <span className={`material-symbols-outlined text-[16px] ${isFav ? 'filled' : ''}`}>
+                    star
                 </span>
             </button>
-
-            <div className="px-1">
-                <h5 className="text-[11px] font-black uppercase italic tracking-tight line-clamp-1 text-white group-hover:text-primary transition-colors">{title}</h5>
-                <div className="flex items-center gap-2 mt-1">
-                    <span className="w-2 h-[1px] bg-slate-800"></span>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{time}</p>
-                </div>
-            </div>
         </div>
     );
 }
