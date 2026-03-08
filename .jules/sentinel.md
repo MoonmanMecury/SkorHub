@@ -1,0 +1,4 @@
+## 2025-05-14 - [Webhook Signature Verification and SQL Interpolation]
+**Vulnerability:** The Lenco webhook handler skipped signature verification if the hash key was missing, used non-constant-time string comparison for the signature (vulnerable to timing attacks), and used template literal interpolation for a SQL query fragment (potential SQL injection vector).
+**Learning:** Even with hardcoded values, interpolating strings into SQL queries is a bad pattern that bypasses driver-level parameterization and can lead to vulnerabilities as code evolves. Additionally, 'crypto.timingSafeEqual' requires explicit buffer length checks to avoid runtime crashes on mismatched inputs.
+**Prevention:** Always enforce signature presence and key configuration, use constant-time comparisons for HMACs, and utilize parameterized queries for all dynamic SQL logic, including conditional intervals or flags.
