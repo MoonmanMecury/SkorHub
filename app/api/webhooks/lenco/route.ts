@@ -19,16 +19,28 @@ export async function POST(request: NextRequest) {
         const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
         const signature = request.headers.get('x-lenco-signature');
 
-        if (hashKey && signature) {
-            const hmac = crypto
-                .createHmac('sha256', hashKey)
-                .update(rawBody)
-                .digest('hex');
+        if (!hashKey) {
+            console.error('[Webhook] Missing LENCO_WEBHOOK_HASH_KEY');
+            return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        }
 
-            if (hmac !== signature) {
-                console.error('[Webhook] Signature mismatch');
-                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-            }
+        if (!signature) {
+            console.error('[Webhook] Missing signature header');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const hmac = crypto
+            .createHmac('sha256', hashKey)
+            .update(rawBody)
+            .digest('hex');
+
+        // Use timingSafeEqual to prevent timing attacks
+        const hmacBuffer = Buffer.from(hmac, 'hex');
+        const signatureBuffer = Buffer.from(signature, 'hex');
+
+        if (hmacBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmacBuffer, signatureBuffer)) {
+            console.error('[Webhook] Signature mismatch');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
 
         // Lenco passes the transaction data in the body
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Event ignored' });
         }
 
-        const { reference, amount, currency, status, customer } = data;
+        const { reference, amount, status } = data;
 
         if (status !== 'successful') {
             return NextResponse.json({ message: 'Status not successful' });
@@ -55,7 +67,6 @@ export async function POST(request: NextRequest) {
             // If the payment isn't in our DB, it might be an ad-hoc donation
             // or a payment not initiated via our UI. We should still log it!
             console.warn(`Webhook received for unknown reference: ${reference}`);
-            // You might want to handle this differently (e.g., create a new user or log to admin)
             return NextResponse.json({ message: 'Reference not found' }, { status: 404 });
         }
 
@@ -81,16 +92,17 @@ export async function POST(request: NextRequest) {
         const userId = payment.user_id;
 
         if (tier === 'supporter' || tier === 'vip') {
-            const expiresAt = payment.is_recurring ? "NOW() + INTERVAL '30 days'" : 'NULL';
+            // Securely handle expiration with parameterized query and CASE statement
+            const isRecurring = payment.is_recurring === true;
 
             await db.query(`
                 UPDATE users
                 SET supporter_tier = $1,
                     supporter_since = COALESCE(supporter_since, NOW()),
                     total_donated = COALESCE(total_donated, 0) + $2,
-                    supporter_expires_at = ${expiresAt}
-                WHERE id = $3
-            `, [tier, donateAmount, userId]);
+                    supporter_expires_at = CASE WHEN $3 = true THEN NOW() + INTERVAL '30 days' ELSE NULL END
+                WHERE id = $4
+            `, [tier, donateAmount, isRecurring, userId]);
         } else {
             // One-time donation
             await db.query(`
