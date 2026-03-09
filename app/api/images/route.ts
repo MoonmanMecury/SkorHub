@@ -10,12 +10,21 @@ export async function GET(request: Request) {
     }
 
     try {
+        const url = new URL(imageUrl);
+
+        // SSRF Protection: Restrict to allowed domains and protocol
+        const isAllowedHost = url.hostname === 'streamed.pk' || url.hostname.endsWith('.streamed.pk');
+        if (url.protocol !== 'https:' || !isAllowedHost) {
+            return new Response('Forbidden: Invalid image source', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
         const response = await fetch(imageUrl, {
             headers: {
-                'X-API-KEY': apiKey || '',
+                // Only send API key to allowed hostnames
+                ...(apiKey ? { 'X-API-KEY': apiKey } : {}),
                 'Accept': 'image/*',
                 'Referer': 'https://streamed.pk/' // Common requirement for sports streamers
             },
@@ -28,15 +37,22 @@ export async function GET(request: Request) {
         }
 
         const contentType = response.headers.get('Content-Type');
+
+        // Security: Validate that we actually got an image
+        if (!contentType || !contentType.startsWith('image/')) {
+            return new Response('Invalid content type', { status: 415 });
+        }
+
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
             headers: {
-                'Content-Type': contentType || 'image/jpeg',
+                'Content-Type': contentType,
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
+                'X-Content-Type-Options': 'nosniff'
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
