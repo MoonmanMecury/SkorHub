@@ -50,8 +50,10 @@ export function EventCard({ title, time, live, imgUrl, id }: EventCardProps) {
                     e.stopPropagation();
                     toggleFavorite(id);
                 }}
-                className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-xl border flex items-center justify-center transition-all z-20 ${isFav
-                    ? 'bg-primary text-white border-primary/50'
+                aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+                aria-pressed={isFav}
+                className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-xl border flex items-center justify-center transition-all z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:opacity-100 ${isFav
+                    ? 'bg-primary text-white border-primary/50 opacity-100'
                     : 'bg-black/40 text-white/50 border-white/10 hover:text-yellow-400 backdrop-blur-md opacity-0 group-hover:opacity-100'
                     }`}
             >

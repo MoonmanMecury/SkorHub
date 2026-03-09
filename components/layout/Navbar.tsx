@@ -26,11 +26,11 @@ export default function Navbar() {
 
                 {/* Nav Links - Hidden on mobile */}
                 <nav className="hidden lg:flex items-center gap-6 text-[11px] font-black uppercase tracking-widest text-slate-500">
-                    <Link className={`${pathname === '/' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/">Home</Link>
-                    <Link className={`${pathname === '/favorites' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/favorites">Favorites</Link>
-                    <Link className={`${pathname === '/schedule' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/schedule">Schedule</Link>
-                    <Link className={`${pathname === '/support' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/support">❤️ Support</Link>
-                    <Link className={`${pathname === '/status' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/status">Status</Link>
+                    <Link className={`rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${pathname === '/' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/">Home</Link>
+                    <Link className={`rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${pathname === '/favorites' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/favorites">Favorites</Link>
+                    <Link className={`rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${pathname === '/schedule' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/schedule">Schedule</Link>
+                    <Link className={`rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${pathname === '/support' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/support">❤️ Support</Link>
+                    <Link className={`rounded-lg px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${pathname === '/status' ? 'text-primary' : 'hover:text-primary transition-colors'}`} href="/status">Status</Link>
                 </nav>
 
                 {/* Search Bar - Centered on mobile, normal on desktop */}
