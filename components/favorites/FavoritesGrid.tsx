@@ -25,7 +25,9 @@ export function FavoritesGrid() {
         async function loadMatches() {
             try {
                 const allMatches = await streamedApi.getAllMatches();
-                const favMatches = allMatches.filter(m => favorites.includes(m.id));
+                // Use Set for O(1) lookup to improve filtering performance
+                const favoritesSet = new Set(favorites);
+                const favMatches = allMatches.filter(m => favoritesSet.has(m.id));
                 setMatches(favMatches);
             } catch (error) {
                 console.error('Failed to load favorite matches:', error);
