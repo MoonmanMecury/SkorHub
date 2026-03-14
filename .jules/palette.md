@@ -1,0 +1,3 @@
+## 2025-05-14 - [Accessibility and Semantic HTML Improvements]
+**Learning:** Nesting a `<button>` inside a Next.js `<Link>` (which renders as an `<a>`) is invalid HTML and can cause issues with screen readers and focus management. Using a `div` with button-like styling inside the link is a safer alternative when the link itself handles the navigation. Also, Material Symbols require explicit `fontVariationSettings` to toggle the 'FILL' state effectively in React.
+**Action:** Always check for nested interactive elements and use `div` or `span` for decorative button-like elements inside links. Use `style={{ fontVariationSettings: "'FILL' 1" }}` for filled Material Symbols.
