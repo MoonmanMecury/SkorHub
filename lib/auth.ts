@@ -4,17 +4,29 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { db } from '@/lib/db';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_during_dev';
+const JWT_SECRET = process.env.JWT_SECRET;
 
-export function verifyToken(token: string): any {
+export function verifyToken(token: string): unknown {
+    if (!JWT_SECRET) {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('JWT_SECRET environment variable is not set');
+        }
+        return null;
+    }
     try {
         return jwt.verify(token, JWT_SECRET);
-    } catch (err) {
+    } catch {
         return null;
     }
 }
 
-export function signToken(payload: any): string {
+export function signToken(payload: string | Buffer | object): string {
+    if (!JWT_SECRET) {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('JWT_SECRET environment variable is not set');
+        }
+        return '';
+    }
     return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
@@ -41,7 +53,7 @@ export async function getSession() {
                             cookiesToSet.forEach(({ name, value, options }) =>
                                 cookieStore.set(name, value, options)
                             )
-                        } catch (e) {
+                        } catch {
                             // Ignore cookie set errors in render phase
                         }
                     },
