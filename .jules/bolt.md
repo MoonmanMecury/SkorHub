@@ -1,0 +1,3 @@
+## 2025-05-22 - Centralized Favorites State for O(1) Performance
+**Learning:** Using a singleton `FavoritesProvider` prevents redundant database and localStorage synchronization in every component. Storing IDs in a `Set` within the provider allows for $O(1)$ lookup complexity, significantly improving performance when rendering long lists of matches.
+**Action:** Always prefer a centralized context for global state that is consumed by multiple components. Ensure reference stability when converting `Set` to `Array` in hooks by using `useMemo` to prevent unnecessary re-renders of consuming components.
