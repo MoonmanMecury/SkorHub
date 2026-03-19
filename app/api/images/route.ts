@@ -10,6 +10,20 @@ export async function GET(request: Request) {
     }
 
     try {
+        // SSRF Protection: Validate the URL to prevent unauthorized access to internal or external resources
+        let parsedUrl: URL;
+        try {
+            parsedUrl = new URL(imageUrl);
+        } catch {
+            return new Response('Invalid URL format', { status: 400 });
+        }
+
+        // Only allow HTTPS and the specific trusted hostname
+        if (parsedUrl.protocol !== 'https:' || parsedUrl.hostname !== 'streamed.pk') {
+            console.warn(`Blocked potential SSRF attempt to: ${imageUrl}`);
+            return new Response('Forbidden: Invalid image source', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -36,7 +50,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
