@@ -4,7 +4,7 @@ import { Match, Stream, Sport } from '@/types';
 const BASE_URL = 'https://streamed.pk/api';
 
 // Helper to determine live status (mimics apiController.js logic)
-function isMatchLive(match: any): boolean {
+function isMatchLive(match: { date: number }): boolean {
     if (!match.date) return false;
     const now = Date.now();
     const matchTime = match.date;
@@ -18,7 +18,21 @@ function isMatchLive(match: any): boolean {
     return matchTime <= now && (now - matchTime) <= fourHoursInMs;
 }
 
-function enrichMatch(match: any): Match {
+interface RawMatch {
+    id: number | string;
+    title: string;
+    date: number;
+    poster?: string;
+    popular?: boolean;
+    sources?: Source[];
+    category?: string;
+    teams?: {
+        home?: { name?: string; badge?: string };
+        away?: { name?: string; badge?: string };
+    };
+}
+
+function enrichMatch(match: RawMatch): Match {
     const homeBadgeId = match.teams?.home?.badge;
     const awayBadgeId = match.teams?.away?.badge;
 
@@ -125,7 +139,7 @@ export const streamedApi = {
             const res = await fetch(`${BASE_URL}/sports`, { next: { revalidate: 86400 } });
             if (!res.ok) throw new Error('Failed to fetch sports');
             return await res.json();
-        } catch (error) {
+        } catch {
             // Fallback static list based on standard sports
             return [
                 { id: 'football', name: 'Football', icon: 'sports_soccer' },
