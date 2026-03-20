@@ -15,20 +15,32 @@ export async function POST(request: NextRequest) {
         const rawBody = await request.text();
         const payload = JSON.parse(rawBody);
 
-        // 1. Signature Verification
+        // 1. Signature Verification - MANDATORY
         const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
         const signature = request.headers.get('x-lenco-signature');
 
-        if (hashKey && signature) {
-            const hmac = crypto
-                .createHmac('sha256', hashKey)
-                .update(rawBody)
-                .digest('hex');
+        if (!hashKey) {
+            console.error('[Webhook] LENCO_WEBHOOK_HASH_KEY is not configured');
+            return NextResponse.json({ error: 'Webhook configuration error' }, { status: 500 });
+        }
 
-            if (hmac !== signature) {
-                console.error('[Webhook] Signature mismatch');
-                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-            }
+        if (!signature) {
+            console.error('[Webhook] Missing signature header');
+            return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+        }
+
+        const hmac = crypto
+            .createHmac('sha256', hashKey)
+            .update(rawBody)
+            .digest('hex');
+
+        // Security: Use timingSafeEqual to prevent timing attacks on signature comparison
+        const hmacBuffer = Buffer.from(hmac);
+        const signatureBuffer = Buffer.from(signature);
+
+        if (hmacBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmacBuffer, signatureBuffer)) {
+            console.error('[Webhook] Signature mismatch');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
 
         // Lenco passes the transaction data in the body
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Event ignored' });
         }
 
-        const { reference, amount, currency, status, customer } = data;
+        const { reference, amount, status } = data;
 
         if (status !== 'successful') {
             return NextResponse.json({ message: 'Status not successful' });
@@ -81,16 +93,28 @@ export async function POST(request: NextRequest) {
         const userId = payment.user_id;
 
         if (tier === 'supporter' || tier === 'vip') {
-            const expiresAt = payment.is_recurring ? "NOW() + INTERVAL '30 days'" : 'NULL';
-
-            await db.query(`
-                UPDATE users
-                SET supporter_tier = $1,
-                    supporter_since = COALESCE(supporter_since, NOW()),
-                    total_donated = COALESCE(total_donated, 0) + $2,
-                    supporter_expires_at = ${expiresAt}
-                WHERE id = $3
-            `, [tier, donateAmount, userId]);
+            // Security: Use parameterized query for expiresAt to prevent SQL injection
+            // Using a raw SQL fragment like "NOW() + INTERVAL '30 days'" in string interpolation is dangerous
+            // if any part of it was user-controlled.
+            if (payment.is_recurring) {
+                await db.query(`
+                    UPDATE users
+                    SET supporter_tier = $1,
+                        supporter_since = COALESCE(supporter_since, NOW()),
+                        total_donated = COALESCE(total_donated, 0) + $2,
+                        supporter_expires_at = NOW() + INTERVAL '30 days'
+                    WHERE id = $3
+                `, [tier, donateAmount, userId]);
+            } else {
+                await db.query(`
+                    UPDATE users
+                    SET supporter_tier = $1,
+                        supporter_since = COALESCE(supporter_since, NOW()),
+                        total_donated = COALESCE(total_donated, 0) + $2,
+                        supporter_expires_at = NULL
+                    WHERE id = $3
+                `, [tier, donateAmount, userId]);
+            }
         } else {
             // One-time donation
             await db.query(`
