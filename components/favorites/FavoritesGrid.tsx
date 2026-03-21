@@ -10,22 +10,23 @@ import { Match } from '@/types';
 import Link from 'next/link';
 
 export function FavoritesGrid() {
-    const { favorites, isLoaded } = useFavorites();
+    const { favoritesSet, isLoaded } = useFavorites();
     const [matches, setMatches] = useState<Match[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (isLoaded && favorites.length > 0) {
+        if (isLoaded && favoritesSet.size > 0) {
             // Lazy background cleanup of stale entries
             cleanupFavoritesAction();
         }
-    }, [isLoaded, favorites.length]);
+    }, [isLoaded, favoritesSet.size]);
 
     useEffect(() => {
         async function loadMatches() {
             try {
                 const allMatches = await streamedApi.getAllMatches();
-                const favMatches = allMatches.filter(m => favorites.includes(m.id));
+                // O(N * 1) lookup with Set vs O(N * M) with Array.includes
+                const favMatches = allMatches.filter(m => favoritesSet.has(String(m.id)));
                 setMatches(favMatches);
             } catch (error) {
                 console.error('Failed to load favorite matches:', error);
@@ -37,7 +38,7 @@ export function FavoritesGrid() {
         if (isLoaded) {
             loadMatches();
         }
-    }, [favorites, isLoaded]);
+    }, [favoritesSet, isLoaded]);
 
     if (!isLoaded || loading) {
         return (
