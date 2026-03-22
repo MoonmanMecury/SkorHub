@@ -103,17 +103,15 @@ export async function POST(request: NextRequest) {
 
                 if (tier === 'supporter' || tier === 'vip') {
                     // Recurring supporter - set expiry to 30 days from now
-                    const expiresAt = payment.is_recurring ? "NOW() + INTERVAL '30 days'" : 'NULL';
-
                     await db.query(`
             UPDATE users
             SET 
               supporter_tier = $1,
               supporter_since = COALESCE(supporter_since, NOW()),
               total_donated = COALESCE(total_donated, 0) + $2,
-              supporter_expires_at = ${expiresAt}
-            WHERE id = $3
-          `, [tier, amount, payload.userId]);
+              supporter_expires_at = CASE WHEN $3::boolean THEN NOW() + INTERVAL '30 days' ELSE NULL END
+            WHERE id = $4
+          `, [tier, amount, !!payment.is_recurring, payload.userId]);
 
                 } else if (tier === 'one-time') {
                     // One-time donation - give 7-day trial of supporter perks
@@ -150,8 +148,12 @@ export async function POST(request: NextRequest) {
                 );
             }
 
-        } catch (lencoError: any) {
-            console.error('Lenco API Error:', lencoError.response?.data || lencoError.message);
+        } catch (lencoError: unknown) {
+            if (axios.isAxiosError(lencoError)) {
+                console.error('Lenco API Error:', lencoError.response?.data || lencoError.message);
+            } else {
+                console.error('Lenco API Error:', lencoError);
+            }
             return NextResponse.json(
                 { error: 'Failed to verify with payment gateway' },
                 { status: 500 }
