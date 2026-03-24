@@ -119,7 +119,7 @@ export default function MatchClientWrapper({ initialMatch, matchId }: MatchClien
             <div className="lg:col-span-3 space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Link href="/" className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                        <Link href="/" className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Go back to home">
                             <span className="material-icons text-slate-400 text-sm">arrow_back</span>
                         </Link>
                         <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase flex items-center gap-2">
@@ -251,6 +251,7 @@ export default function MatchClientWrapper({ initialMatch, matchId }: MatchClien
 
                     <div className="grid grid-cols-2 gap-2 pt-4 border-t border-white/5">
                         <button
+                            aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
                             onClick={() => toggleFavorite(matchId)}
                             className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all border ${isFav
                                 ? 'bg-primary border-primary text-white shadow-lg'
@@ -262,6 +263,7 @@ export default function MatchClientWrapper({ initialMatch, matchId }: MatchClien
                         </button>
                         <div className="relative group/share">
                             <button
+                                aria-label="Toggle share menu"
                                 onClick={() => setShowShareMenu(!showShareMenu)}
                                 className="w-full h-full flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 border border-transparent text-slate-500 hover:bg-white/10 transition-all"
                             >

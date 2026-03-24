@@ -90,6 +90,7 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
 
             {/* Favorite Button - Separate from Link */}
             <button
+                aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
