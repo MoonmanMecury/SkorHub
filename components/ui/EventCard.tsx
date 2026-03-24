@@ -45,6 +45,7 @@ export function EventCard({ title, time, live, imgUrl, id }: EventCardProps) {
 
             {/* Favorite Button */}
             <button
+                aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
