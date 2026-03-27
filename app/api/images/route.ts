@@ -1,6 +1,8 @@
 
 import { NextResponse } from 'next/server';
 
+const ALLOWED_HOSTS = ['streamed.pk', 'www.streamed.pk'];
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const imageUrl = searchParams.get('url');
@@ -10,6 +12,19 @@ export async function GET(request: Request) {
     }
 
     try {
+        // Validate URL and Host to prevent SSRF and API Key leakage
+        let parsedUrl: URL;
+        try {
+            parsedUrl = new URL(imageUrl);
+        } catch {
+            return new Response('Invalid URL parameter', { status: 400 });
+        }
+
+        if (!ALLOWED_HOSTS.includes(parsedUrl.hostname)) {
+            console.error(`Blocked SSRF attempt to: ${imageUrl}`);
+            return new Response('Forbidden: Host not whitelisted', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -36,7 +51,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
