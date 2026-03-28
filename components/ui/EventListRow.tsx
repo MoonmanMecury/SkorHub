@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useFavorites } from '@/hooks/use-favorites';
 
 interface EventListRowProps {
@@ -46,11 +47,19 @@ export function EventListRow({ id, title, time, live, category, homeBadge, awayB
                 {/* Status & Action */}
                 <div className="flex items-center gap-6">
                     <div className="hidden sm:flex items-center -space-x-3 opacity-40 group-hover:opacity-100 transition-opacity">
-                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1.5 backdrop-blur-sm">
-                            <span className="material-icons text-xs">shield</span>
+                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1.5 backdrop-blur-sm overflow-hidden relative">
+                            {homeBadge ? (
+                                <Image src={homeBadge} alt="" fill className="object-contain p-1" />
+                            ) : (
+                                <span className="material-icons text-xs">shield</span>
+                            )}
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1.5 backdrop-blur-sm">
-                            <span className="material-icons text-xs">shield</span>
+                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center p-1.5 backdrop-blur-sm overflow-hidden relative">
+                            {awayBadge ? (
+                                <Image src={awayBadge} alt="" fill className="object-contain p-1" />
+                            ) : (
+                                <span className="material-icons text-xs">shield</span>
+                            )}
                         </div>
                     </div>
 
@@ -67,7 +76,8 @@ export function EventListRow({ id, title, time, live, category, homeBadge, awayB
                     e.stopPropagation();
                     toggleFavorite(id);
                 }}
-                className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg border flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 group-hover:translate-x-2 ${isFav ? 'bg-primary text-white border-primary/50 opacity-100 translate-x-2' : 'bg-[#0A0A0B] text-slate-500 border-white/10'
+                aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg border flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 group-hover:translate-x-2 focus-visible:opacity-100 focus-visible:translate-x-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isFav ? 'bg-primary text-white border-primary/50 opacity-100 translate-x-2' : 'bg-[#0A0A0B] text-slate-500 border-white/10'
                     }`}
             >
                 <span className={`material-symbols-outlined text-sm ${isFav ? 'fill-current' : ''}`}>star</span>
