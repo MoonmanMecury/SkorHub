@@ -1,0 +1,3 @@
+## 2026-03-29 - Parallelized Data Fetching in Server Components
+**Learning:** Sequential 'await' calls for independent data sources in Next.js Server Components create unnecessary request waterfalls, increasing TTFB and total page load time. Parallelizing these with 'Promise.all' can significantly reduce latency, especially when communicating with multiple internal or external API endpoints.
+**Action:** Always audit Server Components for sequential data fetching and group independent requests into 'Promise.all'. Additionally, prefer targeted API endpoints (like 'getMatchesBySport(id)') over fetching large datasets ('getAllMatches') and filtering on the server.
