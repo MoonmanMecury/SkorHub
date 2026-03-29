@@ -7,7 +7,8 @@ interface SportsGridProps {
 }
 
 export function SportsGrid({ sports }: SportsGridProps) {
-    const list = sports || [
+    // Uses provided sports data (e.g. from parent Server Component) or falls back to static defaults
+    const list = (sports && sports.length > 0) ? sports : [
         { id: 'football', name: 'Football', icon: 'sports_soccer' },
         { id: 'basketball', name: 'Basketball', icon: 'sports_basketball' },
         { id: 'american-football', name: 'Amer. Football', icon: 'sports_football' },
