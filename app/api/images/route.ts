@@ -9,6 +9,23 @@ export async function GET(request: Request) {
         return new Response('Missing URL parameter', { status: 400 });
     }
 
+    // SSRF Prevention: Validate the URL hostname
+    try {
+        const parsedUrl = new URL(imageUrl);
+        const allowedHostnames = ['streamed.pk'];
+
+        if (parsedUrl.protocol !== 'https:') {
+            return new Response('Only HTTPS protocol is allowed', { status: 400 });
+        }
+
+        if (!allowedHostnames.includes(parsedUrl.hostname)) {
+            console.warn(`SSRF attempt blocked: ${imageUrl}`);
+            return new Response('Invalid image source', { status: 403 });
+        }
+    } catch {
+        return new Response('Invalid URL provided', { status: 400 });
+    }
+
     try {
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
@@ -36,7 +53,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
