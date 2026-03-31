@@ -10,6 +10,19 @@ export async function GET(request: Request) {
     }
 
     try {
+        // SSRF Protection: Validate the URL
+        const parsedUrl = new URL(imageUrl);
+
+        // Only allow HTTPS
+        if (parsedUrl.protocol !== 'https:') {
+            return new Response('Invalid protocol. Only HTTPS is allowed.', { status: 400 });
+        }
+
+        // Only allow streamed.pk hostname
+        if (parsedUrl.hostname !== 'streamed.pk') {
+            return new Response('Invalid hostname. Only streamed.pk is allowed.', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -36,7 +49,10 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        if (error instanceof TypeError && error.message.includes('Invalid URL')) {
+            return new Response('Invalid URL format', { status: 400 });
+        }
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
