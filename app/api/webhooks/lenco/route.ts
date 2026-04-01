@@ -15,20 +15,27 @@ export async function POST(request: NextRequest) {
         const rawBody = await request.text();
         const payload = JSON.parse(rawBody);
 
-        // 1. Signature Verification
+        // 1. Signature Verification - MANDATORY
         const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
         const signature = request.headers.get('x-lenco-signature');
 
-        if (hashKey && signature) {
-            const hmac = crypto
-                .createHmac('sha256', hashKey)
-                .update(rawBody)
-                .digest('hex');
+        if (!hashKey || !signature) {
+            console.error('[Webhook] Missing hash key or signature');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-            if (hmac !== signature) {
-                console.error('[Webhook] Signature mismatch');
-                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-            }
+        const hmac = crypto
+            .createHmac('sha256', hashKey)
+            .update(rawBody)
+            .digest('hex');
+
+        // Secure timing-safe comparison to prevent timing attacks
+        const hmacBuffer = Buffer.from(hmac, 'hex');
+        const signatureBuffer = Buffer.from(signature, 'hex');
+
+        if (hmacBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmacBuffer, signatureBuffer)) {
+            console.error('[Webhook] Signature mismatch');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
 
         // Lenco passes the transaction data in the body
@@ -81,16 +88,14 @@ export async function POST(request: NextRequest) {
         const userId = payment.user_id;
 
         if (tier === 'supporter' || tier === 'vip') {
-            const expiresAt = payment.is_recurring ? "NOW() + INTERVAL '30 days'" : 'NULL';
-
             await db.query(`
                 UPDATE users
                 SET supporter_tier = $1,
                     supporter_since = COALESCE(supporter_since, NOW()),
                     total_donated = COALESCE(total_donated, 0) + $2,
-                    supporter_expires_at = ${expiresAt}
-                WHERE id = $3
-            `, [tier, donateAmount, userId]);
+                    supporter_expires_at = CASE WHEN $3 = true THEN NOW() + INTERVAL '30 days' ELSE NULL END
+                WHERE id = $4
+            `, [tier, donateAmount, payment.is_recurring, userId]);
         } else {
             // One-time donation
             await db.query(`
