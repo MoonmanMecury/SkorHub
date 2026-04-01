@@ -3,12 +3,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { searchMatchesAction } from '@/app/actions/matches';
 import { Match } from '@/types';
 
 export function SearchBar() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Match[]>([]);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
@@ -21,10 +23,12 @@ export function SearchBar() {
                 setIsSearching(true);
                 const data = await searchMatchesAction(query);
                 setResults(data);
+                setActiveIndex(-1);
                 setIsSearching(false);
                 setIsOpen(true);
             } else {
                 setResults([]);
+                setActiveIndex(-1);
                 setIsOpen(false);
             }
         }, 300);
@@ -46,7 +50,32 @@ export function SearchBar() {
     const handleSelect = (matchId: string) => {
         setIsOpen(false);
         setQuery('');
+        setActiveIndex(-1);
         router.push(`/match/${matchId}`);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!isOpen || results.length === 0) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIndex(prev => (prev + 1) % results.length);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIndex(prev => (prev - 1 + results.length) % results.length);
+                break;
+            case 'Enter':
+                if (activeIndex >= 0) {
+                    e.preventDefault();
+                    handleSelect(results[activeIndex].id);
+                }
+                break;
+            case 'Escape':
+                setIsOpen(false);
+                break;
+        }
     };
 
     return (
@@ -62,6 +91,13 @@ export function SearchBar() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    onKeyDown={handleKeyDown}
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={isOpen}
+                    aria-haspopup="listbox"
+                    aria-controls="search-results-listbox"
+                    aria-activedescendant={activeIndex >= 0 ? `result-option-${activeIndex}` : undefined}
                 />
             </div>
 
@@ -72,13 +108,17 @@ export function SearchBar() {
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Match Results</p>
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div id="search-results-listbox" role="listbox" className="max-h-[400px] overflow-y-auto custom-scrollbar">
                         {results.length > 0 ? (
-                            results.map((match) => (
+                            results.map((match, index) => (
                                 <button
                                     key={match.id}
+                                    id={`result-option-${index}`}
+                                    role="option"
+                                    aria-selected={activeIndex === index}
+                                    onMouseEnter={() => setActiveIndex(index)}
                                     onClick={() => handleSelect(match.id)}
-                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
+                                    className={`w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item ${activeIndex === index ? 'bg-white/10' : ''}`}
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
                                         <span className="material-icons text-lg">
@@ -117,5 +157,3 @@ export function SearchBar() {
         </div>
     );
 }
-
-import Link from 'next/link';
