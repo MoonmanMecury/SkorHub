@@ -9,6 +9,16 @@ export async function GET(request: Request) {
         return new Response('Missing URL parameter', { status: 400 });
     }
 
+    // Security: Prevent SSRF by only allowing URLs from the trusted source
+    try {
+        const parsedUrl = new URL(imageUrl);
+        if (parsedUrl.hostname !== 'streamed.pk') {
+            return new Response('Forbidden: Invalid image source', { status: 403 });
+        }
+    } catch (e) {
+        return new Response('Invalid URL format', { status: 400 });
+    }
+
     try {
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
@@ -36,7 +46,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
