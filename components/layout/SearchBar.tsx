@@ -9,6 +9,7 @@ import { Match } from '@/types';
 export function SearchBar() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Match[]>([]);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
@@ -21,10 +22,12 @@ export function SearchBar() {
                 setIsSearching(true);
                 const data = await searchMatchesAction(query);
                 setResults(data);
+                setActiveIndex(-1);
                 setIsSearching(false);
                 setIsOpen(true);
             } else {
                 setResults([]);
+                setActiveIndex(-1);
                 setIsOpen(false);
             }
         }, 300);
@@ -49,6 +52,33 @@ export function SearchBar() {
         router.push(`/match/${matchId}`);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!isOpen && e.key !== 'ArrowDown') return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                if (results.length === 0) return;
+                e.preventDefault();
+                setIsOpen(true);
+                setActiveIndex(prev => (prev + 1) % results.length);
+                break;
+            case 'ArrowUp':
+                if (results.length === 0) return;
+                e.preventDefault();
+                setActiveIndex(prev => (prev <= 0 ? (results.length - 1) : prev - 1));
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (activeIndex >= 0 && results[activeIndex]) {
+                    handleSelect(results[activeIndex].id);
+                }
+                break;
+            case 'Escape':
+                setIsOpen(false);
+                break;
+        }
+    };
+
     return (
         <div className="flex-1 max-w-md relative" ref={dropdownRef}>
             <div className={`relative group transition-all duration-300 ${isOpen ? 'scale-[1.02]' : ''}`}>
@@ -59,9 +89,16 @@ export function SearchBar() {
                     className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-4 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'}`}
                     placeholder="Search events, teams or live matches..."
                     type="text"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={isOpen}
+                    aria-haspopup="listbox"
+                    aria-controls="search-results-listbox"
+                    aria-activedescendant={activeIndex >= 0 ? `result-item-${activeIndex}` : undefined}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    onKeyDown={handleKeyDown}
                 />
             </div>
 
@@ -72,13 +109,21 @@ export function SearchBar() {
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Match Results</p>
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div
+                        id="search-results-listbox"
+                        role="listbox"
+                        className="max-h-[400px] overflow-y-auto custom-scrollbar"
+                    >
                         {results.length > 0 ? (
-                            results.map((match) => (
+                            results.map((match, index) => (
                                 <button
                                     key={match.id}
+                                    id={`result-item-${index}`}
+                                    role="option"
+                                    aria-selected={index === activeIndex}
                                     onClick={() => handleSelect(match.id)}
-                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
+                                    onMouseEnter={() => setActiveIndex(index)}
+                                    className={`w-full flex items-center gap-4 p-4 transition-colors text-left group/item ${index === activeIndex ? 'bg-white/10' : 'hover:bg-white/5'}`}
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
                                         <span className="material-icons text-lg">
