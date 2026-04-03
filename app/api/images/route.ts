@@ -10,6 +10,16 @@ export async function GET(request: Request) {
     }
 
     try {
+        // SSRF Prevention: Validate URL
+        const parsedUrl = new URL(imageUrl);
+        if (parsedUrl.protocol !== 'https:') {
+            return new Response('Only HTTPS protocol is allowed', { status: 400 });
+        }
+
+        if (parsedUrl.hostname !== 'streamed.pk') {
+            return new Response('Invalid hostname. Only streamed.pk is allowed.', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -28,15 +38,25 @@ export async function GET(request: Request) {
         }
 
         const contentType = response.headers.get('Content-Type');
+
+        // XSS Prevention: Ensure the content is actually an image
+        if (!contentType || !contentType.startsWith('image/')) {
+            return new Response('Invalid content type. Only images are allowed.', { status: 400 });
+        }
+
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
             headers: {
-                'Content-Type': contentType || 'image/jpeg',
+                'Content-Type': contentType,
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
+        // Handle invalid URL errors from URL constructor
+        if (error instanceof TypeError && (error.message.includes('Invalid URL') || error.message.includes('Failed to parse URL'))) {
+            return new Response('Invalid URL format', { status: 400 });
+        }
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
