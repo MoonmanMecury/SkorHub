@@ -1,0 +1,3 @@
+## 2025-05-15 - Waterfall Reduction and Targeted Fetching
+**Learning:** Sequential `await` calls in Next.js Server Components create network waterfalls that significantly increase Time to First Byte (TTFB). Parallelizing independent data fetches with `Promise.all` can reduce load times by the sum of individual request times. Additionally, utilizing specialized API endpoints like `getMatchesBySport(id)` is more efficient than fetching all matches and filtering in-memory as the dataset grows.
+**Action:** Always look for independent `await` calls in Server Components to parallelize them. Check for specialized API methods before resorting to in-memory filtering of large datasets.
