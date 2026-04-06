@@ -9,6 +9,17 @@ export async function GET(request: Request) {
         return new Response('Missing URL parameter', { status: 400 });
     }
 
+    // 1. SSRF Prevention: Validate the URL
+    try {
+        const parsedUrl = new URL(imageUrl);
+        if (parsedUrl.hostname !== 'streamed.pk') {
+            console.error(`Blocked suspicious image proxy request to: ${parsedUrl.hostname}`);
+            return new Response('Forbidden: Only streamed.pk images are allowed', { status: 403 });
+        }
+    } catch {
+        return new Response('Invalid URL parameter', { status: 400 });
+    }
+
     try {
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
@@ -28,6 +39,12 @@ export async function GET(request: Request) {
         }
 
         const contentType = response.headers.get('Content-Type');
+
+        // 2. Content-Type Validation: Ensure we only proxy images
+        if (!contentType || !contentType.startsWith('image/')) {
+            console.error(`Blocked non-image content-type: ${contentType} from ${imageUrl}`);
+            return new Response('Forbidden: Only image content is allowed', { status: 403 });
+        }
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
@@ -36,7 +53,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
