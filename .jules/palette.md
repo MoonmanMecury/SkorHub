@@ -1,0 +1,3 @@
+## 2025-05-14 - Search Bar Keyboard Navigation & Accessibility
+**Learning:** In dark-themed applications, standard hover states (like `hover:bg-white/5`) are often too subtle for keyboard navigation. Using a more distinct visual cue, such as a colored accent border (`border-l-2 border-primary`) combined with a background tint, significantly improves the visibility of the currently focused item for keyboard users. Additionally, it is critical to sync the `activeIndex` on `onMouseEnter` to ensure a seamless transition between mouse and keyboard interaction.
+**Action:** Always provide strong visual feedback for active items in lists/dropdowns and ensure mouse hover state is synchronized with keyboard focus state.
