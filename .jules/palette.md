@@ -1,0 +1,3 @@
+## 2025-04-09 - Enhanced Search Keyboard Navigation
+**Learning:** In dark-themed search dropdowns, using a combination of a colored background tint (e.g., 'bg-white/10') and a vertical accent border (e.g., 'border-l-2 border-primary') for the active item significantly improves the visibility of keyboard focus compared to just a hover-like background. Additionally, when implementing ArrowUp navigation from an initial index of -1, the logic must explicitly handle the wrap-around to the last item.
+**Action:** Always use both background tint and high-contrast accent borders for keyboard focus states in custom dropdowns. Ensure wrap-around logic for ArrowUp handles negative starting indices correctly: `(prev <= 0 ? results.length - 1 : prev - 1)`.
