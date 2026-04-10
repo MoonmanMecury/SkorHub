@@ -82,7 +82,8 @@ export default function VideoPlayer({
                     <button
                         key={option.quality}
                         onClick={() => onQualityChange(option.quality)}
-                        className={`relative group/btn w-8 h-8 rounded-full font-black text-[8px] flex items-center justify-center backdrop-blur-md transition-all border ${streamQuality === option.quality
+                        aria-label={`Switch to ${option.label} Quality (${option.resolution})`}
+                        className={`relative group/btn w-8 h-8 rounded-full font-black text-[8px] flex items-center justify-center backdrop-blur-md transition-all border focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${streamQuality === option.quality
                             ? 'bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/30'
                             : 'bg-black/40 border-white/5 text-slate-400 hover:bg-black/60 hover:text-white'
                             }`}
