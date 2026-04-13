@@ -6,12 +6,20 @@ import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { signToken } from '@/lib/auth'
 
+function isSafeRedirect(url: string | null): boolean {
+    if (!url) return false;
+    // Only allow relative paths starting with / and not // or /\ (which can be used for bypasses)
+    return url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\');
+}
+
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type') as EmailOtpType | null
-    const next = searchParams.get('next')
-        ?? (type === 'recovery' ? '/reset-password' : '/confirm')
+    const nextParam = searchParams.get('next')
+    const next = isSafeRedirect(nextParam)
+        ? nextParam!
+        : (type === 'recovery' ? '/reset-password' : '/confirm')
 
     const code = searchParams.get('code')
 
