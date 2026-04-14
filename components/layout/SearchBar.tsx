@@ -11,6 +11,7 @@ export function SearchBar() {
     const [results, setResults] = useState<Match[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const router = useRouter();
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -23,9 +24,11 @@ export function SearchBar() {
                 setResults(data);
                 setIsSearching(false);
                 setIsOpen(true);
+                setActiveIndex(-1);
             } else {
                 setResults([]);
                 setIsOpen(false);
+                setActiveIndex(-1);
             }
         }, 300);
 
@@ -46,11 +49,44 @@ export function SearchBar() {
     const handleSelect = (matchId: string) => {
         setIsOpen(false);
         setQuery('');
+        setActiveIndex(-1);
         router.push(`/match/${matchId}`);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!isOpen) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIndex(prev => (prev < results.length - 1 ? prev + 1 : 0));
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIndex(prev => (prev <= 0 ? results.length - 1 : prev - 1));
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (activeIndex >= 0 && results[activeIndex]) {
+                    handleSelect(results[activeIndex].id);
+                }
+                break;
+            case 'Escape':
+                e.preventDefault();
+                setIsOpen(false);
+                break;
+        }
+    };
+
     return (
-        <div className="flex-1 max-w-md relative" ref={dropdownRef}>
+        <div
+            className="flex-1 max-w-md relative"
+            ref={dropdownRef}
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-haspopup="listbox"
+            aria-controls="search-results-listbox"
+        >
             <div className={`relative group transition-all duration-300 ${isOpen ? 'scale-[1.02]' : ''}`}>
                 <span className={`material-icons absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${isSearching ? 'text-primary animate-spin' : 'text-slate-500 group-hover:text-primary'}`}>
                     {isSearching ? 'sync' : 'search'}
@@ -62,6 +98,9 @@ export function SearchBar() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    onKeyDown={handleKeyDown}
+                    aria-autocomplete="list"
+                    aria-activedescendant={activeIndex >= 0 ? `result-item-${activeIndex}` : undefined}
                 />
             </div>
 
@@ -72,13 +111,20 @@ export function SearchBar() {
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Match Results</p>
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div
+                        className="max-h-[400px] overflow-y-auto custom-scrollbar"
+                        id="search-results-listbox"
+                        role="listbox"
+                    >
                         {results.length > 0 ? (
-                            results.map((match) => (
+                            results.map((match, index) => (
                                 <button
                                     key={match.id}
+                                    id={`result-item-${index}`}
+                                    role="option"
+                                    aria-selected={index === activeIndex}
                                     onClick={() => handleSelect(match.id)}
-                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
+                                    className={`w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item ${index === activeIndex ? 'bg-white/5' : ''}`}
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
                                         <span className="material-icons text-lg">
