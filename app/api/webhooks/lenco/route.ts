@@ -25,7 +25,11 @@ export async function POST(request: NextRequest) {
                 .update(rawBody)
                 .digest('hex');
 
-            if (hmac !== signature) {
+            const hmacBuffer = Buffer.from(hmac);
+            const signatureBuffer = Buffer.from(signature || '');
+
+            // Use timingSafeEqual to prevent timing attacks
+            if (hmacBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmacBuffer, signatureBuffer)) {
                 console.error('[Webhook] Signature mismatch');
                 return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
             }
