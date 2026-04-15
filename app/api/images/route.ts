@@ -1,5 +1,6 @@
-
 import { NextResponse } from 'next/server';
+
+const ALLOWED_HOSTS = ['streamed.pk'];
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -10,6 +11,17 @@ export async function GET(request: Request) {
     }
 
     try {
+        const parsedUrl = new URL(imageUrl);
+
+        // 🛡️ Sentinel: SSRF protection - restrict to allowed hosts and HTTPS
+        if (parsedUrl.protocol !== 'https:') {
+            return new Response('Only HTTPS protocol is allowed', { status: 400 });
+        }
+
+        if (!ALLOWED_HOSTS.includes(parsedUrl.hostname)) {
+            return new Response('Invalid hostname', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -28,15 +40,25 @@ export async function GET(request: Request) {
         }
 
         const contentType = response.headers.get('Content-Type');
+
+        // 🛡️ Sentinel: Ensure the response is actually an image
+        if (!contentType || !contentType.startsWith('image/')) {
+            return new Response('Invalid content type', { status: 415 });
+        }
+
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
             headers: {
-                'Content-Type': contentType || 'image/jpeg',
+                'Content-Type': contentType,
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        // 🛡️ Sentinel: Handle invalid URLs gracefully
+        if (error instanceof TypeError && error.message.includes('Invalid URL')) {
+            return new Response('Invalid URL format', { status: 400 });
+        }
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
