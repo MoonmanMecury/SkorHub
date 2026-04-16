@@ -19,13 +19,27 @@ export async function POST(request: NextRequest) {
         const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
         const signature = request.headers.get('x-lenco-signature');
 
-        if (hashKey && signature) {
+        // SECURITY: If hashKey is configured, signature is REQUIRED.
+        if (hashKey) {
+            if (!signature) {
+                console.error('[Webhook] Missing signature');
+                return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+            }
+
             const hmac = crypto
                 .createHmac('sha256', hashKey)
                 .update(rawBody)
                 .digest('hex');
 
-            if (hmac !== signature) {
+            // SECURITY: Use timingSafeEqual to prevent timing attacks.
+            // Both must be buffers of the same length for timingSafeEqual to work.
+            const hmacBuffer = Buffer.from(hmac);
+            const signatureBuffer = Buffer.from(signature);
+
+            if (
+                hmacBuffer.length !== signatureBuffer.length ||
+                !crypto.timingSafeEqual(hmacBuffer, signatureBuffer)
+            ) {
                 console.error('[Webhook] Signature mismatch');
                 return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
             }
