@@ -3,12 +3,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { searchMatchesAction } from '@/app/actions/matches';
 import { Match } from '@/types';
 
 export function SearchBar() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Match[]>([]);
+    const [activeIndex, setActiveIndex] = useState(-1);
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
@@ -21,10 +23,12 @@ export function SearchBar() {
                 setIsSearching(true);
                 const data = await searchMatchesAction(query);
                 setResults(data);
+                setActiveIndex(-1); // Reset index on new results
                 setIsSearching(false);
                 setIsOpen(true);
             } else {
                 setResults([]);
+                setActiveIndex(-1);
                 setIsOpen(false);
             }
         }, 300);
@@ -46,7 +50,27 @@ export function SearchBar() {
     const handleSelect = (matchId: string) => {
         setIsOpen(false);
         setQuery('');
+        setActiveIndex(-1);
         router.push(`/match/${matchId}`);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!isOpen) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex((prev) => (prev > 0 ? prev - 1 : prev));
+        } else if (e.key === 'Enter') {
+            if (activeIndex >= 0 && activeIndex < results.length) {
+                e.preventDefault();
+                handleSelect(results[activeIndex].id);
+            }
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+        }
     };
 
     return (
@@ -62,25 +86,39 @@ export function SearchBar() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    onKeyDown={handleKeyDown}
+                    role="combobox"
+                    aria-expanded={isOpen}
+                    aria-haspopup="listbox"
+                    aria-controls="search-results"
+                    aria-activedescendant={activeIndex >= 0 ? `result-${activeIndex}` : undefined}
                 />
             </div>
 
             {/* Dropdown Results */}
             {isOpen && (
-                <div className="absolute top-full mt-3 w-full bg-[#161618] border border-white/10 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-4 duration-200">
+                <div
+                    id="search-results"
+                    role="listbox"
+                    className="absolute top-full mt-3 w-full bg-[#161618] border border-white/10 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-4 duration-200"
+                >
                     <div className="p-3 bg-white/[0.02] border-b border-white/5">
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Match Results</p>
                     </div>
 
                     <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                         {results.length > 0 ? (
-                            results.map((match) => (
+                            results.map((match, index) => (
                                 <button
                                     key={match.id}
+                                    id={`result-${index}`}
+                                    role="option"
+                                    aria-selected={index === activeIndex}
                                     onClick={() => handleSelect(match.id)}
-                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
+                                    onMouseEnter={() => setActiveIndex(index)}
+                                    className={`w-full flex items-center gap-4 p-4 transition-colors text-left group/item ${index === activeIndex ? 'bg-white/10' : 'hover:bg-white/5'}`}
                                 >
-                                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${index === activeIndex ? 'bg-primary text-white' : 'bg-primary/10 text-primary group-hover/item:bg-primary group-hover/item:text-white'}`}>
                                         <span className="material-icons text-lg">
                                             {match.live ? 'live_tv' : 'schedule'}
                                         </span>
@@ -117,5 +155,3 @@ export function SearchBar() {
         </div>
     );
 }
-
-import Link from 'next/link';
