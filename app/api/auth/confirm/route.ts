@@ -6,12 +6,29 @@ import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { signToken } from '@/lib/auth'
 
+/**
+ * Validates that a redirect path is safe (internal to the application).
+ * Prevents Open Redirect vulnerabilities by ensuring the path:
+ * 1. Starts with a single '/'
+ * 2. Does not start with '//' (protocol-relative) or '/\' (browser-interpreted as '//')
+ */
+function isSafeRedirect(path: string): boolean {
+    if (!path.startsWith('/')) return false;
+    if (path.startsWith('//') || path.startsWith('/\\')) return false;
+    return true;
+}
+
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type') as EmailOtpType | null
-    const next = searchParams.get('next')
+    let next = searchParams.get('next')
         ?? (type === 'recovery' ? '/reset-password' : '/confirm')
+
+    // Security: Validate redirect path to prevent Open Redirect
+    if (!isSafeRedirect(next)) {
+        next = type === 'recovery' ? '/reset-password' : '/confirm';
+    }
 
     const code = searchParams.get('code')
 
