@@ -9,6 +9,22 @@ export async function GET(request: Request) {
         return new Response('Missing URL parameter', { status: 400 });
     }
 
+    // SSRF Protection: Validate URL
+    try {
+        const parsedUrl = new URL(imageUrl);
+        const allowedHostnames = ['streamed.pk', 'www.streamed.pk'];
+
+        if (parsedUrl.protocol !== 'https:') {
+            return new Response('Invalid protocol. Only HTTPS is allowed.', { status: 400 });
+        }
+
+        if (!allowedHostnames.includes(parsedUrl.hostname)) {
+            return new Response('Invalid hostname. URL must be from an allowed source.', { status: 400 });
+        }
+    } catch {
+        return new Response('Invalid URL format', { status: 400 });
+    }
+
     try {
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
@@ -27,7 +43,12 @@ export async function GET(request: Request) {
             return new Response(`Remote server returned ${response.status}`, { status: response.status });
         }
 
+        // Verify content type is an image
         const contentType = response.headers.get('Content-Type');
+        if (!contentType || !contentType.startsWith('image/')) {
+            return new Response('Invalid content type. Only images are allowed.', { status: 400 });
+        }
+
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
@@ -36,7 +57,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
