@@ -15,17 +15,23 @@ export async function POST(request: NextRequest) {
         const rawBody = await request.text();
         const payload = JSON.parse(rawBody);
 
-        // 1. Signature Verification
+        // 1. Signature Verification (Hardened: use timingSafeEqual and mandatory if key exists)
         const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
-        const signature = request.headers.get('x-lenco-signature');
+        if (hashKey) {
+            const signature = request.headers.get('x-lenco-signature');
+            if (!signature) {
+                console.error('[Webhook] Missing signature');
+                return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+            }
 
-        if (hashKey && signature) {
             const hmac = crypto
                 .createHmac('sha256', hashKey)
                 .update(rawBody)
-                .digest('hex');
+                .digest();
 
-            if (hmac !== signature) {
+            const signatureBuffer = Buffer.from(signature, 'hex');
+
+            if (hmac.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmac, signatureBuffer)) {
                 console.error('[Webhook] Signature mismatch');
                 return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
             }
