@@ -3,6 +3,7 @@
 'use server'
 
 import { streamedApi } from '@/lib/streamed';
+import { Match } from '@/types';
 
 export async function fetchLiveMatches() {
     return await streamedApi.getLiveMatches();
@@ -12,19 +13,14 @@ export async function fetchAllMatches() {
 }
 
 export async function fetchMatch(id: string) {
-    // Run both checks in parallel to minimize latency
-    const [allMatches, liveMatches] = await Promise.all([
-        streamedApi.getAllMatches(),
-        streamedApi.getLiveMatches().catch(() => [])
-    ]);
+    // streamedApi.getAllMatches() includes all matches (live and upcoming)
+    // Fetching both is redundant and increases latency.
+    const allMatches = await streamedApi.getAllMatches();
 
-    const normalize = (val: any) => String(val).toLowerCase();
+    const normalize = (val: string | number) => String(val).toLowerCase();
     const targetId = normalize(id);
 
-    const match = allMatches.find((m: any) => normalize(m.id) === targetId) ||
-        liveMatches.find((m: any) => normalize(m.id) === targetId);
-
-    return match || null;
+    return allMatches.find((m: Match) => normalize(m.id) === targetId) || null;
 }
 
 export async function getStreamsAction(source: string, id: string) {
