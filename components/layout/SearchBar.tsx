@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import { searchMatchesAction } from '@/app/actions/matches';
 import { Match } from '@/types';
@@ -11,8 +11,11 @@ export function SearchBar() {
     const [results, setResults] = useState<Match[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
     const router = useRouter();
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const searchId = useId();
+    const listboxId = `${searchId}-listbox`;
 
     // Debounce search
     useEffect(() => {
@@ -23,9 +26,11 @@ export function SearchBar() {
                 setResults(data);
                 setIsSearching(false);
                 setIsOpen(true);
+                setSelectedIndex(-1);
             } else {
                 setResults([]);
                 setIsOpen(false);
+                setSelectedIndex(-1);
             }
         }, 300);
 
@@ -46,12 +51,28 @@ export function SearchBar() {
     const handleSelect = (matchId: string) => {
         setIsOpen(false);
         setQuery('');
+        setSelectedIndex(-1);
         router.push(`/match/${matchId}`);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!isOpen) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSelectedIndex(p => (p < results.length - 1 ? p + 1 : p));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSelectedIndex(p => (p > 0 ? p - 1 : p));
+        } else if (e.key === 'Enter' && selectedIndex >= 0) {
+            handleSelect(results[selectedIndex].id);
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+        }
     };
 
     return (
         <div className="flex-1 max-w-md relative" ref={dropdownRef}>
-            <div className={`relative group transition-all duration-300 ${isOpen ? 'scale-[1.02]' : ''}`}>
+            <div className={`relative group transition-all duration-300 ${isOpen ? 'scale-[1.02]' : ''}`} role="combobox" aria-expanded={isOpen} aria-haspopup="listbox" aria-controls={listboxId}>
                 <span className={`material-icons absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${isSearching ? 'text-primary animate-spin' : 'text-slate-500 group-hover:text-primary'}`}>
                     {isSearching ? 'sync' : 'search'}
                 </span>
@@ -62,23 +83,28 @@ export function SearchBar() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    onKeyDown={handleKeyDown}
+                    aria-activedescendant={selectedIndex >= 0 ? `opt-${selectedIndex}` : undefined}
                 />
             </div>
 
             {/* Dropdown Results */}
             {isOpen && (
-                <div className="absolute top-full mt-3 w-full bg-[#161618] border border-white/10 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-4 duration-200">
+                <div id={listboxId} role="listbox" className="absolute top-full mt-3 w-full bg-[#161618] border border-white/10 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-4 duration-200">
                     <div className="p-3 bg-white/[0.02] border-b border-white/5">
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Match Results</p>
                     </div>
 
                     <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
                         {results.length > 0 ? (
-                            results.map((match) => (
+                            results.map((match, index) => (
                                 <button
+                                    id={`opt-${index}`}
                                     key={match.id}
+                                    role="option"
+                                    aria-selected={selectedIndex === index}
                                     onClick={() => handleSelect(match.id)}
-                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
+                                    className={`w-full flex items-center gap-4 p-4 transition-colors text-left group/item ${selectedIndex === index ? 'bg-white/10' : 'hover:bg-white/5'}`}
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
                                         <span className="material-icons text-lg">
