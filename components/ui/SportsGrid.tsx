@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { Sport } from '@/types';
 
 interface SportsGridProps {
-    sports?: { id: string, name: string, icon: string }[];
+    sports?: Sport[];
 }
 
 export function SportsGrid({ sports }: SportsGridProps) {
