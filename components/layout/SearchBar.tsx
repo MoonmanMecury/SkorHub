@@ -56,13 +56,19 @@ export function SearchBar() {
                     {isSearching ? 'sync' : 'search'}
                 </span>
                 <input
-                    className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-4 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'}`}
-                    placeholder="Search events, teams or live matches..."
+                    className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-10 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'}`}
+                    placeholder="Search events..."
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    aria-label="Search matches"
                 />
+                {query && (
+                    <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white transition-colors" aria-label="Clear search">
+                        <span className="material-icons text-sm">close</span>
+                    </button>
+                )}
             </div>
 
             {/* Dropdown Results */}
@@ -78,7 +84,7 @@ export function SearchBar() {
                                 <button
                                     key={match.id}
                                     onClick={() => handleSelect(match.id)}
-                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
+                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/10 transition-colors text-left group/item"
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
                                         <span className="material-icons text-lg">
