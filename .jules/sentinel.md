@@ -1,0 +1,4 @@
+## 2026-04-18 - Fix SSRF and credential leakage in image proxy
+**Vulnerability:** Server-Side Request Forgery (SSRF) and potential credential leakage. The `app/api/images/route.ts` endpoint allowed proxying requests to any URL provided in the `url` query parameter. Furthermore, it automatically attached the `IMAGES_API_KEY` to the outgoing request, which could lead to leaking the secret if an attacker-controlled URL was provided.
+**Learning:** API routes that proxy requests based on user input are high-risk for SSRF. Lack of validation on the destination URL can lead to internal network scanning or external leakage of sensitive headers like API keys.
+**Prevention:** Always validate and sanitize user-provided URLs in proxy routes. Implement a strict protocol allowlist (e.g., only `https:`) and a hostname allowlist. Only attach sensitive headers (like API keys or tokens) after the destination has been verified as trusted.
