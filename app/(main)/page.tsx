@@ -1,16 +1,20 @@
 
 import Link from 'next/link';
 import { streamedApi } from '@/lib/streamed';
+import { Match } from '@/types';
 import { SportsGrid } from '@/components/ui/SportsGrid';
 import { AdPlaceholder } from '@/components/ui/AdPlaceholder';
 
 export default async function Home() {
-    const liveMatches = await streamedApi.getLiveMatches();
-    const allMatches = await streamedApi.getAllMatches();
-    const sports = await streamedApi.getSports();
+    // Parallelize data fetching to reduce TTFB and improve performance
+    const [liveMatches, allMatches, sports] = await Promise.all([
+        streamedApi.getLiveMatches(),
+        streamedApi.getAllMatches(),
+        streamedApi.getSports(),
+    ]);
 
     // Group matches by category
-    const matchesByCategory = allMatches.reduce((acc: { [key: string]: any[] }, match) => {
+    const matchesByCategory = allMatches.reduce((acc: Record<string, Match[]>, match) => {
         const cat = match.sportCategory.toLowerCase();
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(match);
@@ -40,7 +44,7 @@ export default async function Home() {
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-black uppercase tracking-tighter">Sports Categories</h2>
                 </div>
-                <SportsGrid />
+                <SportsGrid sports={sports} />
             </section>
 
             {/* Popular Live Section */}
