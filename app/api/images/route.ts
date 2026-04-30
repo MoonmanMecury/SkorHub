@@ -1,5 +1,23 @@
 
-import { NextResponse } from 'next/server';
+const ALLOWED_DOMAIN = 'streamed.pk';
+
+/**
+ * Validates if the given URL is safe to fetch.
+ * 1. Must be a valid URL.
+ * 2. Must use HTTPS.
+ * 3. Must be from streamed.pk or its subdomains.
+ */
+function isSafeUrl(urlStr: string): boolean {
+    try {
+        const url = new URL(urlStr);
+        if (url.protocol !== 'https:') return false;
+
+        const hostname = url.hostname.toLowerCase();
+        return hostname === ALLOWED_DOMAIN || hostname.endsWith('.' + ALLOWED_DOMAIN);
+    } catch {
+        return false;
+    }
+}
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -7,6 +25,11 @@ export async function GET(request: Request) {
 
     if (!imageUrl) {
         return new Response('Missing URL parameter', { status: 400 });
+    }
+
+    if (!isSafeUrl(imageUrl)) {
+        console.warn(`Blocked SSRF attempt or invalid URL: ${imageUrl}`);
+        return new Response('Invalid or restricted URL', { status: 403 });
     }
 
     try {
@@ -17,7 +40,7 @@ export async function GET(request: Request) {
             headers: {
                 'X-API-KEY': apiKey || '',
                 'Accept': 'image/*',
-                'Referer': 'https://streamed.pk/' // Common requirement for sports streamers
+                'Referer': `https://${ALLOWED_DOMAIN}/`
             },
             cache: 'no-cache'
         });
@@ -30,13 +53,13 @@ export async function GET(request: Request) {
         const contentType = response.headers.get('Content-Type');
         const arrayBuffer = await response.arrayBuffer();
 
-        return new NextResponse(Buffer.from(arrayBuffer), {
+        return new Response(Buffer.from(arrayBuffer), {
             headers: {
                 'Content-Type': contentType || 'image/jpeg',
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
