@@ -10,6 +10,23 @@ export async function GET(request: Request) {
     }
 
     try {
+        const parsedUrl = new URL(imageUrl);
+
+        // 1. Enforce HTTPS for security and to prevent local network probing
+        if (parsedUrl.protocol !== 'https:') {
+            return new Response('Only HTTPS URLs are allowed', { status: 400 });
+        }
+
+        // 2. Validate hostname to prevent SSRF and API key leakage
+        // We only trust our upstream provider domain
+        const allowedDomain = 'streamed.pk';
+        const hostname = parsedUrl.hostname;
+        const isAllowed = hostname === allowedDomain || hostname.endsWith(`.${allowedDomain}`);
+
+        if (!isAllowed) {
+            return new Response('Forbidden: Hostname not allowed', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -17,7 +34,7 @@ export async function GET(request: Request) {
             headers: {
                 'X-API-KEY': apiKey || '',
                 'Accept': 'image/*',
-                'Referer': 'https://streamed.pk/' // Common requirement for sports streamers
+                'Referer': `https://${allowedDomain}/`
             },
             cache: 'no-cache'
         });
@@ -36,7 +53,11 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
+        // Handle invalid URL formats gracefully
+        if (error instanceof TypeError && error.message.includes('Invalid URL')) {
+            return new Response('Invalid URL format', { status: 400 });
+        }
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
