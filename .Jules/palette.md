@@ -1,0 +1,3 @@
+## 2025-05-14 - Keyboard-Accessible Combobox Pattern
+**Learning:** Implementing the WAI-ARIA combobox pattern requires careful synchronization between the input's `aria-activedescendant` and the listbox's active option ID. Using `useId` ensures stable IDs for these relationships, and `role="option"` elements should be non-interactive (like `div`) to avoid nested tab stops while allowing the parent `listbox` to manage focus.
+**Action:** Always use `useId` for accessibility relationships and implement a unified `handleKeyDown` for Arrow/Enter/Escape navigation when building dropdown-style search or select components.
