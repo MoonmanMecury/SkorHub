@@ -62,6 +62,7 @@ export function SearchBar() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    aria-label="Search matches, teams or events"
                 />
             </div>
 
