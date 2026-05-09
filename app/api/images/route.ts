@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import { isSafeUrl } from '@/lib/security';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -7,6 +8,11 @@ export async function GET(request: Request) {
 
     if (!imageUrl) {
         return new Response('Missing URL parameter', { status: 400 });
+    }
+
+    // Security check: Only fetch images from trusted domains
+    if (!isSafeUrl(imageUrl, ['streamed.pk'])) {
+        return new Response('Invalid image URL', { status: 403 });
     }
 
     try {
