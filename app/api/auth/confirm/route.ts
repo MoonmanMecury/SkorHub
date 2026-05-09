@@ -5,13 +5,19 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { signToken } from '@/lib/auth'
+import { isSafeUrl } from '@/lib/security'
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type') as EmailOtpType | null
-    const next = searchParams.get('next')
+    let next = searchParams.get('next')
         ?? (type === 'recovery' ? '/reset-password' : '/confirm')
+
+    // Security check: Only allow redirects to internal paths
+    if (!isSafeUrl(next, [])) {
+        next = '/';
+    }
 
     const code = searchParams.get('code')
 
