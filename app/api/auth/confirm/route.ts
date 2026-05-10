@@ -5,6 +5,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { signToken } from '@/lib/auth'
+import { isSafeUrl } from '@/lib/security'
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
@@ -12,6 +13,9 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') as EmailOtpType | null
     const next = searchParams.get('next')
         ?? (type === 'recovery' ? '/reset-password' : '/confirm')
+
+    // Validate 'next' parameter to prevent Open Redirect attacks
+    const safeNext = isSafeUrl(next) ? next : '/';
 
     const code = searchParams.get('code')
 
@@ -56,8 +60,8 @@ export async function GET(request: NextRequest) {
             });
 
             const redirectUrl = process.env.NEXT_PUBLIC_APP_URL
-                ? `${process.env.NEXT_PUBLIC_APP_URL}${next}`
-                : new URL(next, request.url).toString();
+                ? `${process.env.NEXT_PUBLIC_APP_URL}${safeNext}`
+                : new URL(safeNext, request.url).toString();
 
             return NextResponse.redirect(redirectUrl);
         }
@@ -99,8 +103,8 @@ export async function GET(request: NextRequest) {
             });
 
             const redirectUrl = process.env.NEXT_PUBLIC_APP_URL
-                ? `${process.env.NEXT_PUBLIC_APP_URL}${next}`
-                : new URL(next, request.url).toString();
+                ? `${process.env.NEXT_PUBLIC_APP_URL}${safeNext}`
+                : new URL(safeNext, request.url).toString();
 
             return NextResponse.redirect(redirectUrl);
         }
