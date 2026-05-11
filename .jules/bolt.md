@@ -1,0 +1,3 @@
+## 2025-05-15 - Optimizing Server Component TTFB and List Processing
+**Learning:** Sequential `await` calls in Next.js Server Components create a waterfall effect, significantly increasing TTFB. Parallelizing with `Promise.all` is a mandatory optimization for data-heavy pages. Additionally, nested list filtering (e.g., `list1.filter(a => !list2.find(b => b.id === a.id))`) can become a bottleneck as list sizes grow; using a `Set` for ID lookups reduces complexity from O(N*M) to O(N+M).
+**Action:** Always audit Server Components for sequential `await` calls and replace nested search-based filtering with `Set` or `Map` lookups.
