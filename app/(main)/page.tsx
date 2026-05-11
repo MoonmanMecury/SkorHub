@@ -27,7 +27,10 @@ export default async function Home() {
                     Important: Please use the official mirrors to access original stream URLs.
                     <Link href="#" className="underline font-bold ml-1">Click here to explore mirrors.</Link>
                 </p>
-                <button className="ml-auto text-primary/60 hover:text-primary">
+                <button
+                    className="ml-auto text-primary/60 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded"
+                    aria-label="Close disclaimer"
+                >
                     <span className="material-icons">close</span>
                 </button>
             </div>
