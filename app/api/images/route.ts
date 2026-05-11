@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import { isSafeUrl } from '@/lib/security';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -7,6 +8,12 @@ export async function GET(request: Request) {
 
     if (!imageUrl) {
         return new Response('Missing URL parameter', { status: 400 });
+    }
+
+    // SSRF Protection: Validate the URL against an allowlist of domains
+    if (!isSafeUrl(imageUrl, ['streamed.pk'])) {
+        console.warn(`Blocked SSRF attempt to: ${imageUrl}`);
+        return new Response('Invalid image URL', { status: 403 });
     }
 
     try {
