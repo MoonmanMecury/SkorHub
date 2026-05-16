@@ -27,7 +27,7 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
 
     return (
         <div className="w-full group relative block">
-            <Link href={`/match/${matchId}`} className="cursor-pointer">
+            <Link href={`/match/${matchId}`} className="cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-[1.5rem] block">
                 <div className="relative aspect-video rounded-[1.5rem] overflow-hidden bg-[#161618] border border-white/5 transition-all group-hover:border-primary/30 group-hover:shadow-[0_10px_40px_rgba(239,68,68,0.15)] shadow-xl">
                     {posterUrl ? (
                         <Image
@@ -95,7 +95,8 @@ export function MatchCard({ team1, team2, meta, live, viewers, matchId, posterUr
                     e.stopPropagation();
                     toggleFavorite(matchId);
                 }}
-                className={`absolute bottom-16 right-4 z-30 w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-2xl border ${isFav
+                aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                className={`absolute bottom-16 right-4 z-30 w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-2xl border focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${isFav
                     ? 'bg-primary text-white border-primary/50'
                     : 'bg-black/60 text-white/50 border-white/10 hover:border-primary/50 hover:text-white backdrop-blur-md opacity-0 group-hover:opacity-100'
                     }`}
