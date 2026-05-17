@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import { isSafeUrl } from '@/lib/security';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -7,6 +8,12 @@ export async function GET(request: Request) {
 
     if (!imageUrl) {
         return new Response('Missing URL parameter', { status: 400 });
+    }
+
+    // SSRF Protection: Only allow proxying images from trusted domains
+    if (!isSafeUrl(imageUrl, ['streamed.pk'])) {
+        console.error(`Blocked suspicious image proxy request: ${imageUrl}`);
+        return new Response('Forbidden: Invalid image source', { status: 403 });
     }
 
     try {
@@ -19,7 +26,8 @@ export async function GET(request: Request) {
                 'Accept': 'image/*',
                 'Referer': 'https://streamed.pk/' // Common requirement for sports streamers
             },
-            cache: 'no-cache'
+            cache: 'no-cache',
+            signal: AbortSignal.timeout(5000) // 5s timeout to prevent DoS
         });
 
         if (!response.ok) {
@@ -36,7 +44,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }

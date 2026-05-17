@@ -1,0 +1,4 @@
+## 2025-05-14 - Unified URL Validation for SSRF and Open Redirects
+**Vulnerability:** The `app/api/images/route.ts` proxy was susceptible to Server-Side Request Forgery (SSRF) and API key leakage because it fetched arbitrary URLs provided in the `url` query parameter. Additionally, the `app/api/auth/confirm/route.ts` endpoint allowed Open Redirects via the `next` parameter.
+**Learning:** Centralizing URL validation in a `isSafeUrl` utility effectively mitigates both SSRF and Open Redirects while promoting a reusable security pattern. Using `new URL(url)` for parsing is safer than regex-based approaches, but relative paths starting with `//` or `/\` must be explicitly blocked as they can be interpreted as protocol-relative URLs by browsers, leading to bypasses.
+**Prevention:** Always validate external or user-provided URLs against an allowlist of trusted domains or restrict them to safe internal relative paths using a robust validation utility like `isSafeUrl`.
