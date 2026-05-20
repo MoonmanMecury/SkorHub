@@ -1,0 +1,3 @@
+## 2025-05-15 - Targeted API Fetching on Category Pages
+**Learning:** Fetching all data and filtering in a Server Component is a common performance bottleneck. Using targeted API endpoints like `getMatchesBySport(id)` significantly reduces the payload size and server-side processing time. Additionally, parallelizing metadata fetches (like `getSports`) with the main data fetch using `Promise.all` eliminates unnecessary waterfalls.
+**Action:** Always check `lib/streamed.ts` for specialized fetch methods before falling back to `getAllMatches()`. Always use `Promise.all` for multiple independent server-side fetches.
