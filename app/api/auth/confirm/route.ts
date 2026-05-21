@@ -10,8 +10,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type') as EmailOtpType | null
-    const next = searchParams.get('next')
-        ?? (type === 'recovery' ? '/reset-password' : '/confirm')
+    const nextParam = searchParams.get('next')
+    const defaultNext = type === 'recovery' ? '/reset-password' : '/confirm'
+
+    // Security: Validate that 'next' is a local path to prevent open redirect
+    const isValidNext = (path: string | null): path is string => {
+        return !!path && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\');
+    };
+
+    const next = isValidNext(nextParam) ? nextParam : defaultNext;
 
     const code = searchParams.get('code')
 
