@@ -24,7 +24,7 @@ export function SportsGrid({ sports }: SportsGridProps) {
     return (
         <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-6">
             {list.map((cat, i) => (
-                <Link key={i} href={`/category/${cat.id}`} className="flex-none group cursor-pointer block">
+                <Link key={i} href={`/category/${cat.id}`} className="flex-none group cursor-pointer block focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-[2rem]">
                     <div className="w-36 h-36 bg-[#161618] rounded-[2rem] flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/50 group-hover:shadow-[0_10px_40px_rgba(239,68,68,0.15)] transition-all duration-500 relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="relative z-10 w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-xl">
