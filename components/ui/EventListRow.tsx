@@ -20,7 +20,7 @@ export function EventListRow({ id, title, time, live, category, homeBadge, awayB
 
     return (
         <div className="group relative bg-[#161618]/40 hover:bg-[#161618] border border-white/5 hover:border-primary/20 rounded-2xl p-4 transition-all duration-300">
-            <Link href={`/match/${id}`} className="flex flex-col md:flex-row items-center gap-6">
+            <Link href={`/match/${id}`} className="flex flex-col md:flex-row items-center gap-6 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-2xl">
                 {/* Time & Category */}
                 <div className="flex flex-row md:flex-col items-center md:items-start gap-4 md:gap-1 min-w-[100px]">
                     <p className="text-white font-black text-sm italic group-hover:text-primary transition-colors">{time}</p>
@@ -54,9 +54,9 @@ export function EventListRow({ id, title, time, live, category, homeBadge, awayB
                         </div>
                     </div>
 
-                    <button className="px-6 py-2 bg-white/5 group-hover:bg-primary border border-white/10 group-hover:border-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">
+                    <span className="px-6 py-2 bg-white/5 group-hover:bg-primary border border-white/10 group-hover:border-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">
                         Watch
-                    </button>
+                    </span>
                 </div>
             </Link>
 
@@ -67,7 +67,8 @@ export function EventListRow({ id, title, time, live, category, homeBadge, awayB
                     e.stopPropagation();
                     toggleFavorite(id);
                 }}
-                className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg border flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 group-hover:translate-x-2 ${isFav ? 'bg-primary text-white border-primary/50 opacity-100 translate-x-2' : 'bg-[#0A0A0B] text-slate-500 border-white/10'
+                aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+                className={`absolute -right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg border flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 group-hover:translate-x-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:opacity-100 focus-visible:translate-x-2 ${isFav ? 'bg-primary text-white border-primary/50 opacity-100 translate-x-2' : 'bg-[#0A0A0B] text-slate-500 border-white/10'
                     }`}
             >
                 <span className={`material-symbols-outlined text-sm ${isFav ? 'fill-current' : ''}`}>star</span>
