@@ -5,9 +5,12 @@ import { SportsGrid } from '@/components/ui/SportsGrid';
 import { AdPlaceholder } from '@/components/ui/AdPlaceholder';
 
 export default async function Home() {
-    const liveMatches = await streamedApi.getLiveMatches();
-    const allMatches = await streamedApi.getAllMatches();
-    const sports = await streamedApi.getSports();
+    // Parallelize data fetching to eliminate waterfalls
+    const [liveMatches, allMatches, sports] = await Promise.all([
+        streamedApi.getLiveMatches(),
+        streamedApi.getAllMatches(),
+        streamedApi.getSports()
+    ]);
 
     // Group matches by category
     const matchesByCategory = allMatches.reduce((acc: { [key: string]: any[] }, match) => {
