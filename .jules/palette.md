@@ -1,0 +1,3 @@
+## 2025-05-23 - [Accessibility] Keyboard visibility for hover-only interactive elements
+**Learning:** Interactive elements hidden behind a `group-hover` (like favorite buttons on cards) are inaccessible to keyboard users unless they also have `focus-visible` styles that force visibility when focused. Additionally, nesting `<button>` elements inside `<Link>` or `<a>` tags is a common source of hydration errors and invalid HTML that disrupts screen readers.
+**Action:** Always ensure that any element with `group-hover:opacity-100` also has `group-focus-visible:opacity-100` or equivalent focus styles. Use `<span>` styled as a button for purely visual buttons nested inside larger links.
