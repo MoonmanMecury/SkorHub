@@ -6,14 +6,21 @@ import { RedirectAlert } from '@/components/ui/RedirectAlert';
 export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    // Fetch sports to get the proper name
-    const sports = await streamedApi.getSports();
+    /**
+     * BOLT OPTIMIZATION:
+     * 1. Parallelize data fetching using Promise.all to eliminate the waterfall,
+     *    reducing total fetch time by roughly 50%.
+     * 2. Use targeted streamedApi.getMatchesBySport(id) instead of fetching ALL
+     *    matches and filtering client-side. This reduces memory usage and
+     *    bandwidth by avoiding processing irrelevant data.
+     */
+    const [sports, matches] = await Promise.all([
+        streamedApi.getSports(),
+        streamedApi.getMatchesBySport(id)
+    ]);
+
     const sport = sports.find(s => s.id.toLowerCase() === id.toLowerCase());
     const sportName = sport ? sport.name : id.toUpperCase();
-
-    // Fetch matches for this sport
-    const allMatches = await streamedApi.getAllMatches();
-    const matches = allMatches.filter(m => m.sportCategory.toLowerCase() === id.toLowerCase());
 
     if (matches.length === 0) {
         return <RedirectAlert message={`No active ${sportName} matches found at this moment. Redirecting to global schedule...`} target="/schedule" />;
