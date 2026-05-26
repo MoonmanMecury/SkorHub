@@ -17,18 +17,31 @@ export async function POST(request: NextRequest) {
 
         // 1. Signature Verification
         const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
+        if (!hashKey) {
+            console.error('[Webhook] LENCO_WEBHOOK_HASH_KEY is not configured');
+            return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        }
+
         const signature = request.headers.get('x-lenco-signature');
+        if (!signature) {
+            console.error('[Webhook] Missing x-lenco-signature header');
+            return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+        }
 
-        if (hashKey && signature) {
-            const hmac = crypto
-                .createHmac('sha256', hashKey)
-                .update(rawBody)
-                .digest('hex');
+        const hmac = crypto
+            .createHmac('sha256', hashKey)
+            .update(rawBody)
+            .digest();
 
-            if (hmac !== signature) {
+        try {
+            const signatureBuffer = Buffer.from(signature, 'hex');
+            if (hmac.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmac, signatureBuffer)) {
                 console.error('[Webhook] Signature mismatch');
                 return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
             }
+        } catch {
+            console.error('[Webhook] Signature format error');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
 
         // Lenco passes the transaction data in the body
@@ -39,7 +52,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Event ignored' });
         }
 
-        const { reference, amount, currency, status, customer } = data;
+        const { reference, amount, status } = data;
 
         if (status !== 'successful') {
             return NextResponse.json({ message: 'Status not successful' });
