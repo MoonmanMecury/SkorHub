@@ -1,5 +1,6 @@
-
 import { NextResponse } from 'next/server';
+
+const ALLOWED_HOSTS = ['streamed.pk'];
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -10,34 +11,42 @@ export async function GET(request: Request) {
     }
 
     try {
-        // We use the IMAGES_API_KEY from .env.local if available
-        const apiKey = process.env.IMAGES_API_KEY;
+        const parsedUrl = new URL(imageUrl);
+        if (parsedUrl.protocol !== 'https:') {
+            return new Response('Only HTTPS protocol is allowed', { status: 400 });
+        }
+        if (!ALLOWED_HOSTS.includes(parsedUrl.hostname)) {
+            return new Response('Forbidden: domain not whitelisted', { status: 403 });
+        }
 
         const response = await fetch(imageUrl, {
             headers: {
-                'X-API-KEY': apiKey || '',
+                'X-API-KEY': process.env.IMAGES_API_KEY || '',
                 'Accept': 'image/*',
-                'Referer': 'https://streamed.pk/' // Common requirement for sports streamers
+                'Referer': 'https://streamed.pk/'
             },
-            cache: 'no-cache'
+            cache: 'no-cache',
+            signal: AbortSignal.timeout(5000)
         });
 
         if (!response.ok) {
-            console.error(`Failed to fetch image from ${imageUrl}: ${response.status}`);
             return new Response(`Remote server returned ${response.status}`, { status: response.status });
         }
 
-        const contentType = response.headers.get('Content-Type');
+        const contentType = response.headers.get('Content-Type') || 'image/jpeg';
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
             headers: {
-                'Content-Type': contentType || 'image/jpeg',
+                'Content-Type': contentType,
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
+                'X-Content-Type-Options': 'nosniff'
             },
         });
-    } catch (error: any) {
-        console.error('Image proxy error:', error);
-        return new Response('Error fetching image', { status: 500 });
+    } catch (error: unknown) {
+        const isTimeout = error instanceof Error && error.name === 'TimeoutError';
+        return new Response(isTimeout ? 'Request timed out' : 'Error fetching image', {
+            status: isTimeout ? 504 : 500
+        });
     }
 }
