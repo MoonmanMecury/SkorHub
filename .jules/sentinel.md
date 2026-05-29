@@ -1,0 +1,4 @@
+## 2025-05-22 - Mandate Signature Verification and Timing-Safe Comparison
+**Vulnerability:** Authentication bypass in webhook handler due to optional signature verification and timing attack risk.
+**Learning:** The previous implementation used an `if (hashKey && signature)` block, which meant that if an attacker omitted the `x-lenco-signature` header, the entire verification logic was skipped, effectively allowing unauthorized requests to be processed as valid. Additionally, standard string comparison was used for the HMAC signature.
+**Prevention:** Always use "fail-closed" logic for security checks. Verification must be mandatory. Use `crypto.timingSafeEqual` with Buffers for signature comparisons to mitigate timing attacks. Ensure environment variables for secrets are required and validated early in the request lifecycle.
