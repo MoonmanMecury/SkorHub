@@ -1,0 +1,61 @@
+
+> skorhub@0.1.0 dev /app
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 1146ms
+○ Compiling / ...
+Error: Failed to fetch matches
+    at Object.getAllMatches (lib/streamed.ts:66:32)
+    at async Home (app/(main)/page.tsx:10:47)
+  64 |         try {
+  65 |             const res = await fetch(`${BASE_URL}/matches/all`, { next: { revalidate: 300 } });
+> 66 |             if (!res.ok) throw new Error('Failed to fetch matches');
+     |                                ^
+  67 |             const data = await res.json();
+  68 |             return Array.isArray(data) ? data.map(enrichMatch) : [];
+  69 |         } catch (error) {
+Error: Failed to fetch live matches
+    at Object.getLiveMatches (lib/streamed.ts:78:32)
+    at async Home (app/(main)/page.tsx:10:47)
+  76 |         try {
+  77 |             const res = await fetch(`${BASE_URL}/matches/live`, { next: { revalidate: 15 } }); // shorter cache for live
+> 78 |             if (!res.ok) throw new Error('Failed to fetch live matches');
+     |                                ^
+  79 |             const data = await res.json();
+  80 |             // Original controller forced live=true for this endpoint
+  81 |             return Array.isArray(data) ? data.map(m => ({ ...enrichMatch(m), live: true })) : [];
+ GET / 200 in 6.1s (compile: 4.9s, render: 1199ms)
+getSession fallback error: Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at getSession (lib/auth.ts:33:44)
+    at async GET (app/api/auth/me/route.ts:11:19)
+  31 |     // Fallback: Check Supabase session if legacy token is missing or invalid
+  32 |     try {
+> 33 |         const supabase = createServerClient(
+     |                                            ^
+  34 |             process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  35 |             process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+  36 |             {
+Auth Me Error: Error: Your project's URL and Key are required to create a Supabase client!
+
+Check your Supabase project's API settings to find these values
+
+https://supabase.com/dashboard/project/_/settings/api
+    at <unknown> (https://supabase.com/dashboard/project/_/settings/api)
+    at GET (app/api/auth/me/route.ts:15:42)
+  13 |     // Re-sync: If custom token is missing but Supabase session exists, recreate the token
+  14 |     if (!session) {
+> 15 |       const supabase = createServerClient(
+     |                                          ^
+  16 |         process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  17 |         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+  18 |         {
