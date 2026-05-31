@@ -4,18 +4,26 @@ import { streamedApi } from '@/lib/streamed';
 import { SportsGrid } from '@/components/ui/SportsGrid';
 import { AdPlaceholder } from '@/components/ui/AdPlaceholder';
 
-export default async function Home() {
-    const liveMatches = await streamedApi.getLiveMatches();
-    const allMatches = await streamedApi.getAllMatches();
-    const sports = await streamedApi.getSports();
+import { Match } from '@/types';
 
-    // Group matches by category
-    const matchesByCategory = allMatches.reduce((acc: { [key: string]: any[] }, match) => {
+export default async function Home() {
+    // Parallelize data fetching to reduce TTFB by avoiding waterfalls
+    const [liveMatches, allMatches, sports] = await Promise.all([
+        streamedApi.getLiveMatches(),
+        streamedApi.getAllMatches(),
+        streamedApi.getSports()
+    ]);
+
+    // Efficiently group matches by category using O(n) reduction
+    const matchesByCategory = allMatches.reduce((acc: Record<string, Match[]>, match) => {
         const cat = match.sportCategory.toLowerCase();
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(match);
         return acc;
     }, {});
+
+    // Create a Set of live match IDs for O(1) lookup during filtering
+    const liveMatchIds = new Set(liveMatches.map(m => m.id));
 
     return (
         <div className="max-w-7xl mx-auto px-4 pt-2 pb-10 space-y-12">
@@ -117,17 +125,21 @@ export default async function Home() {
                     <Link href="/schedule" className="text-xs font-black uppercase tracking-widest text-primary hover:underline">Full Schedule</Link>
                 </div>
                 <div className="flex overflow-x-auto snap-x hide-scrollbar -mx-4 px-4 gap-4 pb-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 sm:gap-4 sm:pb-0 sm:mx-0 sm:px-0">
-                    {allMatches.filter(m => !liveMatches.find(l => l.id === m.id)).slice(0, 18).map(match => (
-                        <div key={match.id} className="snap-center flex-none w-64 max-w-[80vw] sm:w-auto sm:max-w-none">
-                            <EventCard
-                                id={match.id}
-                                title={`${match.teams.home.name} vs ${match.teams.away.name}`}
-                                time={new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                live={match.live}
-                                imgUrl={match.poster || 'https://placehold.co/600x400/1e1e21/FFF?text=No+Image'}
-                            />
-                        </div>
-                    ))}
+                    {/* Use Set lookup for O(1) matching instead of O(N) find in a loop */}
+                    {allMatches
+                        .filter(m => !liveMatchIds.has(m.id))
+                        .slice(0, 18)
+                        .map(match => (
+                            <div key={match.id} className="snap-center flex-none w-64 max-w-[80vw] sm:w-auto sm:max-w-none">
+                                <EventCard
+                                    id={match.id}
+                                    title={`${match.teams.home.name} vs ${match.teams.away.name}`}
+                                    time={new Date(match.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    live={match.live}
+                                    imgUrl={match.poster || 'https://placehold.co/600x400/1e1e21/FFF?text=No+Image'}
+                                />
+                            </div>
+                        ))}
                 </div>
             </section>
 
