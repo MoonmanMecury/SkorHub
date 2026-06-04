@@ -9,11 +9,32 @@ export async function GET(request: Request) {
         return new Response('Missing URL parameter', { status: 400 });
     }
 
+    // SSRF Prevention: Validate URL and Whitelist Hostnames
+    let parsedUrl: URL;
+    try {
+        parsedUrl = new URL(imageUrl);
+    } catch {
+        return new Response('Invalid URL', { status: 400 });
+    }
+
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        return new Response('Invalid protocol', { status: 400 });
+    }
+
+    const allowedHostnames = ['streamed.pk'];
+    const isWhitelisted = allowedHostnames.some(hostname =>
+        parsedUrl.hostname === hostname || parsedUrl.hostname.endsWith('.' + hostname)
+    );
+
+    if (!isWhitelisted) {
+        return new Response('Domain not allowed', { status: 403 });
+    }
+
     try {
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
-        const response = await fetch(imageUrl, {
+        const response = await fetch(parsedUrl.toString(), {
             headers: {
                 'X-API-KEY': apiKey || '',
                 'Accept': 'image/*',
@@ -24,7 +45,8 @@ export async function GET(request: Request) {
 
         if (!response.ok) {
             console.error(`Failed to fetch image from ${imageUrl}: ${response.status}`);
-            return new Response(`Remote server returned ${response.status}`, { status: response.status });
+            // Do not leak remote server status or details
+            return new Response('Upstream image server error', { status: 502 });
         }
 
         const contentType = response.headers.get('Content-Type');
@@ -36,7 +58,7 @@ export async function GET(request: Request) {
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
