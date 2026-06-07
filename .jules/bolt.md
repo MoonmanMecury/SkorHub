@@ -1,0 +1,3 @@
+## 2026-06-07 - Elimination of Request Waterfalls in Server Components
+**Learning:** Sequential `await` calls in Next.js Server Components create a performance waterfall, where each request must wait for the previous one to complete. This is especially impactful when multiple independent API calls are required for the initial page load.
+**Action:** Always identify independent asynchronous operations and execute them in parallel using `Promise.all` to minimize the time spent waiting for network requests. Parallelizing three independent fetches (Live, All Matches, Sports) in the Home page reduced fetching latency by ~51%.
