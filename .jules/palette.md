@@ -1,0 +1,3 @@
+## 2025-05-14 - Interactive elements visibility and accessibility
+**Learning:** Using `opacity-0 group-hover:opacity-100` for interactive elements like "Favorite" buttons creates a significant accessibility barrier for keyboard users. These elements are effectively hidden from sight unless hovered, making it impossible for keyboard-only users to know they exist or where they are.
+**Action:** Always pair `group-hover:opacity-100` with `focus-visible:opacity-100` and a clear focus ring (e.g., `focus-visible:ring-2`) to ensure that interactive elements become visible and identifiable when they receive keyboard focus. Additionally, ensure all icon-only buttons have descriptive `aria-label` and correct `aria-pressed` states.
