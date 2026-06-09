@@ -11,9 +11,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
     const sport = sports.find(s => s.id.toLowerCase() === id.toLowerCase());
     const sportName = sport ? sport.name : id.toUpperCase();
 
-    // Fetch matches for this sport
-    const allMatches = await streamedApi.getAllMatches();
-    const matches = allMatches.filter(m => m.sportCategory.toLowerCase() === id.toLowerCase());
+    // Fetch matches for this sport directly to reduce data payload size
+    // and eliminate inefficient in-memory filtering.
+    const matches = await streamedApi.getMatchesBySport(id);
 
     if (matches.length === 0) {
         return <RedirectAlert message={`No active ${sportName} matches found at this moment. Redirecting to global schedule...`} target="/schedule" />;
