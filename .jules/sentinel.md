@@ -1,0 +1,4 @@
+## 2026-06-12 - [Lenco Webhook Fail-Open and Timing Attack]
+**Vulnerability:** The Lenco webhook handler was vulnerable to a "fail-open" scenario where missing configuration or signature headers would bypass verification entirely. It also used an insecure string comparison (`!==`) for HMAC verification, making it susceptible to timing attacks.
+**Learning:** Checking for the presence of a hash key and signature before verification is critical to ensure a fail-secure state. In Next.js/Node environments, `crypto.timingSafeEqual` is the standard for secure signature comparison. Additionally, moving body parsing AFTER verification reduces the attack surface for DoS.
+**Prevention:** Always implement mandatory (fail-secure) checks for webhook signatures. Use `crypto.timingSafeEqual` for all security-sensitive comparisons. Perform verification as early as possible in the request lifecycle.
