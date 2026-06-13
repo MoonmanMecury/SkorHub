@@ -1,0 +1,4 @@
+## 2025-05-15 - SSRF and Secret Leakage in Image Proxy
+**Vulnerability:** The image proxy at `app/api/images/route.ts` was an open proxy that accepted any URL and forwarded the `IMAGES_API_KEY` to it. This allowed for Server-Side Request Forgery (SSRF) and potential leakage of sensitive API keys to attacker-controlled domains.
+**Learning:** Open proxies in API routes are high-risk entry points. Using `URL` parsing for hostname whitelisting and protocol enforcement is essential to restrict traffic to trusted origins.
+**Prevention:** Always implement a strict hostname whitelist and protocol validation (HTTPS) for proxy endpoints. Only forward sensitive headers (like API keys) to verified trusted domains. Validate the upstream response's Content-Type to ensure it matches the expected media type.
