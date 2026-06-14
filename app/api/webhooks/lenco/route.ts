@@ -13,23 +13,35 @@ import crypto from 'crypto';
 export async function POST(request: NextRequest) {
     try {
         const rawBody = await request.text();
-        const payload = JSON.parse(rawBody);
-
-        // 1. Signature Verification
-        const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
         const signature = request.headers.get('x-lenco-signature');
+        const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
 
-        if (hashKey && signature) {
-            const hmac = crypto
-                .createHmac('sha256', hashKey)
-                .update(rawBody)
-                .digest('hex');
-
-            if (hmac !== signature) {
-                console.error('[Webhook] Signature mismatch');
-                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-            }
+        // 1. Fail-Secure Signature Verification
+        if (!hashKey) {
+            console.error('[Webhook] LENCO_WEBHOOK_HASH_KEY is not configured');
+            return NextResponse.json({ error: 'Webhook configuration error' }, { status: 500 });
         }
+
+        if (!signature) {
+            console.error('[Webhook] Missing signature header');
+            return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+        }
+
+        const hmac = crypto
+            .createHmac('sha256', hashKey)
+            .update(rawBody)
+            .digest();
+
+        const signatureBuffer = Buffer.from(signature, 'hex');
+
+        // Timing-safe comparison to prevent timing attacks
+        if (hmac.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmac, signatureBuffer)) {
+            console.error('[Webhook] Signature mismatch');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        }
+
+        // 2. Parse payload ONLY after verification to prevent DoS from large/malformed JSON
+        const payload = JSON.parse(rawBody);
 
         // Lenco passes the transaction data in the body
         const { event, data } = payload;
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Event ignored' });
         }
 
-        const { reference, amount, currency, status, customer } = data;
+        const { reference, amount, status } = data;
 
         if (status !== 'successful') {
             return NextResponse.json({ message: 'Status not successful' });
