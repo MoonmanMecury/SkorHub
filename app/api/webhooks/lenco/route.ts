@@ -13,23 +13,30 @@ import crypto from 'crypto';
 export async function POST(request: NextRequest) {
     try {
         const rawBody = await request.text();
-        const payload = JSON.parse(rawBody);
 
-        // 1. Signature Verification
+        // 1. Signature Verification (Fail-secure)
         const hashKey = process.env.LENCO_WEBHOOK_HASH_KEY;
         const signature = request.headers.get('x-lenco-signature');
 
-        if (hashKey && signature) {
-            const hmac = crypto
-                .createHmac('sha256', hashKey)
-                .update(rawBody)
-                .digest('hex');
-
-            if (hmac !== signature) {
-                console.error('[Webhook] Signature mismatch');
-                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-            }
+        if (!hashKey || !signature) {
+            console.error('[Webhook] Missing hash key or signature header');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const hmac = crypto
+            .createHmac('sha256', hashKey)
+            .update(rawBody)
+            .digest(); // Get as Buffer for timingSafeEqual
+
+        const signatureBuffer = Buffer.from(signature, 'hex');
+
+        if (hmac.length !== signatureBuffer.length || !crypto.timingSafeEqual(hmac, signatureBuffer)) {
+            console.error('[Webhook] Signature mismatch');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        }
+
+        // Postpone parsing until after verification to mitigate DoS risks
+        const payload = JSON.parse(rawBody);
 
         // Lenco passes the transaction data in the body
         const { event, data } = payload;
