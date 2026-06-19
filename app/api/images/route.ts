@@ -10,6 +10,14 @@ export async function GET(request: Request) {
     }
 
     try {
+        const url = new URL(imageUrl);
+
+        // SSRF Protection: Whitelist allowed hostnames and enforce HTTPS
+        const allowedHosts = ['streamed.pk'];
+        if (!allowedHosts.includes(url.hostname) || url.protocol !== 'https:') {
+            return new Response('Forbidden: Invalid image source', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -24,19 +32,27 @@ export async function GET(request: Request) {
 
         if (!response.ok) {
             console.error(`Failed to fetch image from ${imageUrl}: ${response.status}`);
-            return new Response(`Remote server returned ${response.status}`, { status: response.status });
+            // Return generic 502 to avoid leaking upstream error details
+            return new Response('Error fetching from upstream', { status: 502 });
         }
 
         const contentType = response.headers.get('Content-Type');
+
+        // Security: Validate that the response is actually an image
+        if (contentType && !contentType.startsWith('image/')) {
+            return new Response('Invalid content type', { status: 400 });
+        }
+
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
             headers: {
                 'Content-Type': contentType || 'image/jpeg',
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
+                'X-Content-Type-Options': 'nosniff', // Security: Prevent MIME-sniffing
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
