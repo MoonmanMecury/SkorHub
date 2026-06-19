@@ -62,6 +62,7 @@ export function SearchBar() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    aria-label="Search matches"
                 />
             </div>
 
@@ -78,7 +79,8 @@ export function SearchBar() {
                                 <button
                                     key={match.id}
                                     onClick={() => handleSelect(match.id)}
-                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
+                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 focus-visible:bg-white/10 transition-colors text-left group/item outline-none"
+                                    aria-label={`View ${match.teams?.home?.name} vs ${match.teams?.away?.name}`}
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
                                         <span className="material-icons text-lg">

@@ -1,0 +1,3 @@
+## 2026-06-19 - Accessibility and UX Improvements
+**Learning:** Setting `opacity-0` on interactive elements (like favorite buttons) for a cleaner "hover-only" UI prevents keyboard users from identifying focused elements. Additionally, nesting interactive elements like `<button>` inside `<Link>` (which renders as `<a>`) is invalid HTML that breaks accessibility trees and screen reader behavior.
+**Action:** Always pair hover-based visibility (`group-hover:opacity-100`) with focus-based visibility (`focus-visible:opacity-100`) to support keyboard navigation. Use semantic non-interactive elements (like `<span>`) for visual call-to-actions when they are already nested inside an existing link.
