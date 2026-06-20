@@ -1,0 +1,4 @@
+## 2026-06-20 - Secure Lenco Webhook Verification
+**Vulnerability:** The Lenco webhook handler was using a fail-open pattern where signature verification was skipped if the secret key or signature header was missing. It also used standard string comparison for signatures and parsed the JSON payload before verifying the signature.
+**Learning:** Webhook handlers must enforce fail-secure logic by requiring all security components (keys/signatures) to be present. Comparing cryptographic hashes with standard equality operators is vulnerable to timing attacks; `crypto.timingSafeEqual` should be used with Buffers of equal length.
+**Prevention:** Always use `crypto.timingSafeEqual` for signature verification and perform verification as early as possible, specifically before resource-intensive operations like `JSON.parse()`. Ensure all security-critical environment variables and headers are strictly validated.
