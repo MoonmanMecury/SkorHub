@@ -58,6 +58,7 @@ export function SearchBar() {
                 <input
                     className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-4 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'}`}
                     placeholder="Search events, teams or live matches..."
+                    aria-label="Search events, teams or live matches"
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -78,6 +79,7 @@ export function SearchBar() {
                                 <button
                                     key={match.id}
                                     onClick={() => handleSelect(match.id)}
+                                    aria-label={`View match: ${match.teams?.home?.name} vs ${match.teams?.away?.name}`}
                                     className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
