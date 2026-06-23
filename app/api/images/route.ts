@@ -1,6 +1,8 @@
 
 import { NextResponse } from 'next/server';
 
+const ALLOWED_HOSTS = ['streamed.pk'];
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const imageUrl = searchParams.get('url');
@@ -10,6 +12,16 @@ export async function GET(request: Request) {
     }
 
     try {
+        const url = new URL(imageUrl);
+
+        if (url.protocol !== 'https:') {
+            return new Response('Only HTTPS protocol is allowed', { status: 400 });
+        }
+
+        if (!ALLOWED_HOSTS.includes(url.hostname)) {
+            return new Response('Hostname not whitelisted', { status: 400 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -23,21 +35,26 @@ export async function GET(request: Request) {
         });
 
         if (!response.ok) {
-            console.error(`Failed to fetch image from ${imageUrl}: ${response.status}`);
-            return new Response(`Remote server returned ${response.status}`, { status: response.status });
+            // Secure error handling - don't leak remote server details
+            return new Response('Failed to fetch image from remote server', { status: 400 });
         }
 
         const contentType = response.headers.get('Content-Type');
+        if (!contentType || !contentType.startsWith('image/')) {
+            return new Response('URL did not resolve to a valid image', { status: 400 });
+        }
+
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
             headers: {
-                'Content-Type': contentType || 'image/jpeg',
+                'Content-Type': contentType,
+                'X-Content-Type-Options': 'nosniff',
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
             },
         });
-    } catch (error: any) {
-        console.error('Image proxy error:', error);
-        return new Response('Error fetching image', { status: 500 });
+    } catch {
+        // Secure error handling: If URL parsing fails or other error occurs, return generic error
+        return new Response('Invalid URL or error fetching image', { status: 400 });
     }
 }
