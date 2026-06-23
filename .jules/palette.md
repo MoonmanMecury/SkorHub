@@ -1,0 +1,3 @@
+## 2025-05-14 - HTML Nesting and Accessibility in List Rows
+**Learning:** Nesting interactive elements like `<button>` inside `<Link>` (which renders as an `<a>`) is invalid HTML and can cause unpredictable behavior in screen readers and event handling. Additionally, icon-only buttons often lack the necessary `aria-label` and focus-visible states in this design system.
+**Action:** When working with list rows that are wrapped in links, ensure inner interactive elements are rendered as `<span>` or `<div>` with appropriate styling if they don't need independent semantic button behavior, or use absolute positioning to move them outside the DOM tree of the link if they must remain buttons. Always ensure `aria-label` and `focus-visible` are applied to favorite/star buttons.
