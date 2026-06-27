@@ -1,6 +1,11 @@
 
 import { NextResponse } from 'next/server';
 
+// Get allowed hostnames from environment or default to streamed.pk
+const ALLOWED_HOSTS = process.env.ALLOWED_IMAGE_HOSTS
+    ? process.env.ALLOWED_IMAGE_HOSTS.split(',').map(h => h.trim())
+    : ['streamed.pk'];
+
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const imageUrl = searchParams.get('url');
@@ -10,6 +15,18 @@ export async function GET(request: Request) {
     }
 
     try {
+        const parsedUrl = new URL(imageUrl);
+
+        // SSRF Protection: Enforce HTTPS
+        if (parsedUrl.protocol !== 'https:') {
+            return new Response('Only HTTPS is allowed', { status: 400 });
+        }
+
+        // SSRF Protection: Whitelist hostnames
+        if (!ALLOWED_HOSTS.includes(parsedUrl.hostname)) {
+            return new Response('Forbidden hostname', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -28,16 +45,23 @@ export async function GET(request: Request) {
         }
 
         const contentType = response.headers.get('Content-Type');
+
+        // SSRF Protection: Validate that the response is actually an image
+        if (contentType && !contentType.startsWith('image/')) {
+            return new Response('Invalid content type from remote server', { status: 400 });
+        }
+
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
             headers: {
                 'Content-Type': contentType || 'image/jpeg',
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
+                'X-Content-Type-Options': 'nosniff' // Prevent MIME-type sniffing
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Image proxy error:', error);
-        return new Response('Error fetching image', { status: 500 });
+        return new Response('Error processing image request', { status: 400 });
     }
 }
