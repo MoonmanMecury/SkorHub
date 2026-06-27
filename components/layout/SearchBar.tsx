@@ -50,7 +50,7 @@ export function SearchBar() {
     };
 
     return (
-        <div className="flex-1 max-w-md relative" ref={dropdownRef}>
+        <div className="flex-1 max-w-md relative" ref={dropdownRef} role="search">
             <div className={`relative group transition-all duration-300 ${isOpen ? 'scale-[1.02]' : ''}`}>
                 <span className={`material-icons absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${isSearching ? 'text-primary animate-spin' : 'text-slate-500 group-hover:text-primary'}`}>
                     {isSearching ? 'sync' : 'search'}
@@ -58,6 +58,7 @@ export function SearchBar() {
                 <input
                     className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-4 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'}`}
                     placeholder="Search events, teams or live matches..."
+                    aria-label="Search events, teams or live matches"
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -72,7 +73,7 @@ export function SearchBar() {
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Match Results</p>
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar" aria-live="polite" role="status">
                         {results.length > 0 ? (
                             results.map((match) => (
                                 <button
