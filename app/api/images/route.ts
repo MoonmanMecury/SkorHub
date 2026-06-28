@@ -10,6 +10,22 @@ export async function GET(request: Request) {
     }
 
     try {
+        const url = new URL(imageUrl);
+
+        // SSRF Protection: Whitelist allowed hosts
+        const allowedHosts = (process.env.ALLOWED_IMAGE_HOSTS || 'streamed.pk')
+            .split(',')
+            .map(h => h.trim());
+
+        if (!allowedHosts.includes(url.hostname)) {
+            return new Response('Unauthorized image host', { status: 403 });
+        }
+
+        // SSRF Protection: Enforce HTTPS
+        if (url.protocol !== 'https:') {
+            return new Response('Insecure protocol', { status: 403 });
+        }
+
         // We use the IMAGES_API_KEY from .env.local if available
         const apiKey = process.env.IMAGES_API_KEY;
 
@@ -28,15 +44,22 @@ export async function GET(request: Request) {
         }
 
         const contentType = response.headers.get('Content-Type');
+
+        // Security: Ensure the response is actually an image
+        if (!contentType?.startsWith('image/')) {
+            return new Response('Invalid content type', { status: 403 });
+        }
+
         const arrayBuffer = await response.arrayBuffer();
 
         return new NextResponse(Buffer.from(arrayBuffer), {
             headers: {
-                'Content-Type': contentType || 'image/jpeg',
+                'Content-Type': contentType,
                 'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=43200',
+                'X-Content-Type-Options': 'nosniff',
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Image proxy error:', error);
         return new Response('Error fetching image', { status: 500 });
     }
