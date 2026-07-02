@@ -5,12 +5,18 @@ import { SportsGrid } from '@/components/ui/SportsGrid';
 import { AdPlaceholder } from '@/components/ui/AdPlaceholder';
 
 export default async function Home() {
-    const liveMatches = await streamedApi.getLiveMatches();
-    const allMatches = await streamedApi.getAllMatches();
-    const sports = await streamedApi.getSports();
+    // Parallelize data fetching to reduce page load time
+    const [liveMatches, allMatches, sports] = await Promise.all([
+        streamedApi.getLiveMatches(),
+        streamedApi.getAllMatches(),
+        streamedApi.getSports()
+    ]);
 
-    // Group matches by category
-    const matchesByCategory = allMatches.reduce((acc: { [key: string]: any[] }, match) => {
+    // Use a Set for O(1) lookup of live matches when filtering the "Upcoming" section
+    const liveMatchIds = new Set(liveMatches.map(m => m.id));
+
+    // Group matches by category - O(N) operation
+    const matchesByCategory = allMatches.reduce((acc: Record<string, typeof allMatches>, match) => {
         const cat = match.sportCategory.toLowerCase();
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(match);
@@ -40,7 +46,8 @@ export default async function Home() {
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-black uppercase tracking-tighter">Sports Categories</h2>
                 </div>
-                <SportsGrid />
+                {/* Pass fetched sports to avoid redundant fallback fetching inside the component */}
+                <SportsGrid sports={sports} />
             </section>
 
             {/* Popular Live Section */}
@@ -117,7 +124,8 @@ export default async function Home() {
                     <Link href="/schedule" className="text-xs font-black uppercase tracking-widest text-primary hover:underline">Full Schedule</Link>
                 </div>
                 <div className="flex overflow-x-auto snap-x hide-scrollbar -mx-4 px-4 gap-4 pb-4 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 sm:gap-4 sm:pb-0 sm:mx-0 sm:px-0">
-                    {allMatches.filter(m => !liveMatches.find(l => l.id === m.id)).slice(0, 18).map(match => (
+                    {/* Optimize filter from O(N*M) to O(N) using the liveMatchIds Set */}
+                    {allMatches.filter(m => !liveMatchIds.has(m.id)).slice(0, 18).map(match => (
                         <div key={match.id} className="snap-center flex-none w-64 max-w-[80vw] sm:w-auto sm:max-w-none">
                             <EventCard
                                 id={match.id}
