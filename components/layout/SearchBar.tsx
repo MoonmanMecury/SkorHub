@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { searchMatchesAction } from '@/app/actions/matches';
 import { Match } from '@/types';
 
@@ -12,7 +13,7 @@ export function SearchBar() {
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const formRef = useRef<HTMLFormElement>(null);
 
     // Debounce search
     useEffect(() => {
@@ -35,7 +36,7 @@ export function SearchBar() {
     // Close on click outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            if (formRef.current && !formRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
         }
@@ -50,24 +51,46 @@ export function SearchBar() {
     };
 
     return (
-        <div className="flex-1 max-w-md relative" ref={dropdownRef}>
+        <form
+            role="search"
+            onSubmit={(e) => e.preventDefault()}
+            className="flex-1 max-w-md relative"
+            ref={formRef}
+        >
             <div className={`relative group transition-all duration-300 ${isOpen ? 'scale-[1.02]' : ''}`}>
                 <span className={`material-icons absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${isSearching ? 'text-primary animate-spin' : 'text-slate-500 group-hover:text-primary'}`}>
                     {isSearching ? 'sync' : 'search'}
                 </span>
                 <input
-                    className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-4 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'}`}
+                    className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-10 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'} [&::-webkit-search-cancel-button]:appearance-none`}
                     placeholder="Search events, teams or live matches..."
-                    type="text"
+                    type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    aria-label="Search matches"
                 />
+                {query && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setQuery('');
+                            setIsOpen(false);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                        aria-label="Clear search"
+                    >
+                        <span className="material-icons text-lg">close</span>
+                    </button>
+                )}
             </div>
 
             {/* Dropdown Results */}
             {isOpen && (
-                <div className="absolute top-full mt-3 w-full bg-[#161618] border border-white/10 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-4 duration-200">
+                <div
+                    aria-live="polite"
+                    className="absolute top-full mt-3 w-full bg-[#161618] border border-white/10 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100] animate-in fade-in slide-in-from-top-4 duration-200"
+                >
                     <div className="p-3 bg-white/[0.02] border-b border-white/5">
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Match Results</p>
                     </div>
@@ -114,8 +137,6 @@ export function SearchBar() {
                     </div>
                 </div>
             )}
-        </div>
+        </form>
     );
 }
-
-import Link from 'next/link';
