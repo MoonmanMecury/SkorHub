@@ -1,0 +1,3 @@
+## 2025-05-15 - Parallel Data Fetching & Set-based Filtering
+**Learning:** Sequential `await` calls in Next.js Server Components create a performance waterfall, where the total load time is the sum of all request durations. Parallelizing these with `Promise.all` reduces latency to the duration of the longest request. Additionally, replacing `array.find` or `array.includes` within a loop with a `Set.has` lookup transforms an $O(N \times M)$ operation into $O(N + M)$.
+**Action:** Always audit Server Components for sequential data fetching and utilize `Set` or `Map` for lookups during data transformation to maintain efficient rendering.
