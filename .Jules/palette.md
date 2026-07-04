@@ -1,0 +1,3 @@
+## 2025-05-15 - Improving Redirect UX and Icon Button Accessibility
+**Learning:** Blocking native `alert()` calls disrupt the flow and are inaccessible for users expecting a modern web experience. Replacing them with integrated, non-blocking countdown timers improves both UX and accessibility. Additionally, icon-only buttons like "Favorite" stars are often invisible to keyboard users and screen readers if they rely solely on hover states and lack ARIA labels.
+**Action:** Always prefer integrated visual feedback (like countdowns or toasts) over native alerts. Ensure all icon-only interactive elements have descriptive `aria-label` and `focus-visible` states that ensure they are visible when navigated via keyboard (e.g., `focus-visible:opacity-100`).
