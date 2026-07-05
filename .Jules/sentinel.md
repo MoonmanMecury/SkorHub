@@ -1,0 +1,4 @@
+## 2025-05-14 - Lenco Webhook Auth Bypass and Timing Attack
+**Vulnerability:** The Lenco webhook handler in `app/api/webhooks/lenco/route.ts` was prone to authentication bypass and timing attacks. It lacked fail-secure logic (allowing requests if the hash key or signature was missing) and used insecure string comparison (`!==`) for signature verification. Additionally, it parsed the JSON body before authenticating the request, creating a DoS risk.
+**Learning:** Webhook handlers must be fail-secure and use constant-time comparisons for signature verification. Processing untrusted data (like JSON parsing) should be deferred until after authentication.
+**Prevention:** Always implement fail-secure checks for required security headers and environment variables. Use `crypto.timingSafeEqual` for secret/signature comparisons. Validate signatures before parsing request bodies.
