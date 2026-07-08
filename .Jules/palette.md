@@ -1,0 +1,3 @@
+## 2025-05-14 - Search Bar Accessibility and Consistency
+**Learning:** When implementing a custom clear button for `type="search"` inputs, the native WebKit cancel button must be hidden using `[&::-webkit-search-cancel-button]:appearance-none` to prevent redundant UI elements. Additionally, search results should use `aria-live="polite"` to ensure dynamic content updates are announced to screen reader users.
+**Action:** Always pair custom search controls with appropriate ARIA live regions and ensure native browser styles are normalized for a consistent cross-platform experience. Use `material-symbols-outlined` for all new icons to match the project's design system.
