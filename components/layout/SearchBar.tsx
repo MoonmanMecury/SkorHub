@@ -12,7 +12,7 @@ export function SearchBar() {
     const [isSearching, setIsSearching] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLFormElement>(null);
 
     // Debounce search
     useEffect(() => {
@@ -50,19 +50,39 @@ export function SearchBar() {
     };
 
     return (
-        <div className="flex-1 max-w-md relative" ref={dropdownRef}>
+        <form
+            className="flex-1 max-w-md relative"
+            ref={dropdownRef}
+            role="search"
+            onSubmit={(e) => e.preventDefault()}
+        >
             <div className={`relative group transition-all duration-300 ${isOpen ? 'scale-[1.02]' : ''}`}>
-                <span className={`material-icons absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${isSearching ? 'text-primary animate-spin' : 'text-slate-500 group-hover:text-primary'}`}>
+                <span className={`material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors duration-300 ${isSearching ? 'text-primary animate-spin' : 'text-slate-500 group-hover:text-primary'}`}>
                     {isSearching ? 'sync' : 'search'}
                 </span>
                 <input
-                    className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-4 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'}`}
+                    className={`w-full bg-[#161618] border rounded-2xl py-2.5 pl-12 pr-10 text-xs font-medium focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all text-white placeholder-slate-600 outline-none ${isOpen ? 'border-primary/30 shadow-lg shadow-primary/5' : 'border-white/5'} [&::-webkit-search-cancel-button]:appearance-none`}
                     placeholder="Search events, teams or live matches..."
-                    type="text"
+                    type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
+                    aria-label="Search matches"
                 />
+                {query && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setQuery('');
+                            setResults([]);
+                            setIsOpen(false);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                        aria-label="Clear search"
+                    >
+                        <span className="material-symbols-outlined text-lg">close</span>
+                    </button>
+                )}
             </div>
 
             {/* Dropdown Results */}
@@ -72,7 +92,7 @@ export function SearchBar() {
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-2">Match Results</p>
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar" aria-live="polite">
                         {results.length > 0 ? (
                             results.map((match) => (
                                 <button
@@ -81,7 +101,7 @@ export function SearchBar() {
                                     className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors text-left group/item"
                                 >
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover/item:bg-primary group-hover/item:text-white transition-all">
-                                        <span className="material-icons text-lg">
+                                        <span className="material-symbols-outlined text-lg">
                                             {match.live ? 'live_tv' : 'schedule'}
                                         </span>
                                     </div>
@@ -102,7 +122,7 @@ export function SearchBar() {
                             ))
                         ) : (
                             <div className="p-10 text-center">
-                                <span className="material-icons text-slate-700 text-4xl mb-3">search_off</span>
+                                <span className="material-symbols-outlined text-slate-700 text-4xl mb-3">search_off</span>
                                 <p className="text-xs font-black text-slate-500 uppercase tracking-widest">No matches found</p>
                                 <p className="text-[10px] text-slate-600 mt-1 uppercase">Try searching for a different team or sport</p>
                             </div>
@@ -114,7 +134,7 @@ export function SearchBar() {
                     </div>
                 </div>
             )}
-        </div>
+        </form>
     );
 }
 
