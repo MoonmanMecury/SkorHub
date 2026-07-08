@@ -1,0 +1,4 @@
+## 2025-05-14 - Lenco Webhook Authentication Bypass and Timing Attack
+**Vulnerability:** The Lenco webhook handler used an optional signature check that could be bypassed if the `LENCO_WEBHOOK_HASH_KEY` was missing or the `x-lenco-signature` header was omitted. It also used standard string comparison for HMAC verification.
+**Learning:** Optional security checks (`if (secret && signature)`) can lead to "fail-open" scenarios where unauthenticated requests are processed if the environment is misconfigured or headers are stripped.
+**Prevention:** Implement fail-secure logic by requiring authentication credentials upfront. Use `crypto.timingSafeEqual` for all signature verifications to prevent timing-based side-channel attacks, and defer expensive operations like JSON parsing until after authentication is successful.
